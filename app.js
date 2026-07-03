@@ -118,6 +118,7 @@ const FOOD_FADE = 1400;
 const KOI_FRAME = 256;
 const KOI_SWIM_FRAMES = [0, 1, 2, 3, 4, 3, 2, 1];
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+const coarsePointer = matchMedia("(pointer: coarse)").matches;
 
 function spriteForKind(kind) {
   if (kind === "gold" && goldKoiSpriteReady) return goldKoiSprite;
@@ -1335,7 +1336,7 @@ class ChatLayer {
   setInputFocused(focused) {
     this.inputFocused = focused;
     if (focused) {
-      this.setState("keyboard");
+      if (coarsePointer || this.keyboardLift > 24) this.setState("keyboard");
       settleChatScroll();
     }
     if (!focused && this.state === "keyboard") this.setState(this.beforeKeyboardState);
