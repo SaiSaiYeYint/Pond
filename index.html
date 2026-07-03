@@ -445,9 +445,300 @@ html, body {
   touch-action: pan-y;
 }
 </style>
+<style id="layerArchitecture">
+.phone{
+  position:relative!important;
+  display:block!important;
+  overflow:hidden!important;
+  --keyboard-lift:0px;
+}
+.pondLayer,.pageLayer,.chatLayer{
+  position:absolute!important;
+  inset:0!important;
+}
+.pondLayer{
+  z-index:0!important;
+  pointer-events:auto!important;
+}
+.pondLayer .pond,.pondLayer .waterGlow{
+  position:absolute!important;
+  inset:0!important;
+}
+.pageLayer{
+  z-index:10!important;
+  pointer-events:none!important;
+  transition:opacity .24s ease,transform .24s ease!important;
+}
+.pageLayer .screens,.pageLayer .screen{
+  position:absolute!important;
+  inset:0!important;
+}
+.pageLayer .screen{
+  pointer-events:none!important;
+  padding:82px 18px 112px!important;
+}
+.pageLayer .screen > *{
+  pointer-events:auto!important;
+}
+.chatLayer{
+  z-index:100!important;
+  pointer-events:none!important;
+  overflow:hidden!important;
+  touch-action:none!important;
+}
+.chatLayer .top,.chatLayer .quickThread,.chatLayer .anchor,.chatLayer .bottomComposer,.chatLayer .rewardToast{
+  pointer-events:auto!important;
+}
+.chatLayer .top{
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  top:0!important;
+  z-index:20!important;
+}
+.chatLayer .bottomComposer{
+  position:absolute!important;
+  left:96px!important;
+  right:24px!important;
+  bottom:calc(env(safe-area-inset-bottom) + 12px + var(--keyboard-lift,0px))!important;
+  z-index:40!important;
+}
+.chatLayer .quickThread{
+  position:absolute!important;
+  left:50%!important;
+  right:auto!important;
+  width:min(356px,calc(100% - 44px))!important;
+  transform:translateX(-50%)!important;
+  bottom:calc(env(safe-area-inset-bottom) + 78px + var(--keyboard-lift,0px))!important;
+  z-index:35!important;
+}
+.chatLayer .anchor{
+  position:absolute!important;
+  left:50%!important;
+  right:auto!important;
+  width:min(356px,calc(100% - 44px))!important;
+  top:auto!important;
+  bottom:calc(env(safe-area-inset-bottom) + 78px + var(--keyboard-lift,0px))!important;
+  transform:translateX(-50%)!important;
+  z-index:30!important;
+  overflow:visible!important;
+  clip-path:none!important;
+  display:flex!important;
+  align-items:stretch!important;
+  pointer-events:none!important;
+}
+.chatLayer .chat{
+  display:none!important;
+  width:100%!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+.chatLayer .chat.open{
+  display:flex!important;
+  flex-direction:column!important;
+}
+.chatLayer .log{
+  height:auto!important;
+  max-height:none!important;
+  background:transparent!important;
+  padding:0!important;
+  gap:8px!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  scrollbar-width:none!important;
+  touch-action:pan-y!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+.chatLayer .log::-webkit-scrollbar{display:none!important}
+.chatLayer .speech{display:none!important}
+.chatLayer .orb{
+  position:absolute!important;
+  left:-78px!important;
+  bottom:-66px!important;
+  z-index:45!important;
+  pointer-events:auto!important;
+}
+.phone .chatLayer .orb,.phone.chatMode .chatLayer .orb,.phone.keyboardOpen .chatLayer .orb{
+  left:-78px!important;
+  bottom:-66px!important;
+}
+.chatState-minimized .chatLayer .chat{display:none!important}
+.chatState-minimized .pageLayer{
+  opacity:1!important;
+  visibility:visible!important;
+  transform:none!important;
+}
+.chatState-maximized .pageLayer,.chatState-keyboardOpen.chatWasMaximized .pageLayer{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transform:none!important;
+}
+.chatState-maximized .chatLayer .quickThread,.chatState-keyboardOpen .chatLayer .quickThread{
+  display:none!important;
+}
+.chatState-maximized .chatLayer .anchor{
+  top:86px!important;
+  bottom:calc(env(safe-area-inset-bottom) + 78px + var(--keyboard-lift,0px))!important;
+}
+.chatState-maximized .chatLayer .chat{
+  height:100%!important;
+}
+.chatState-maximized .chatLayer .log{
+  height:100%!important;
+  padding-top:18px!important;
+  mask-image:linear-gradient(to bottom,transparent 0,#000 28px,#000 100%)!important;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 28px,#000 100%)!important;
+}
+.chatState-keyboardOpen .chatLayer .top{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+.chatState-keyboardOpen .chatLayer .anchor{
+  top:12px!important;
+  bottom:calc(env(safe-area-inset-bottom) + 78px + var(--keyboard-lift,0px))!important;
+}
+.chatState-keyboardOpen .chatLayer .chat{
+  display:flex!important;
+  height:100%!important;
+}
+.chatState-keyboardOpen .chatLayer .log{
+  height:100%!important;
+  padding:8px 0 12px!important;
+}
+.chatState-keyboardOpen.chatWasMinimized .pageLayer{
+  opacity:1!important;
+  visibility:visible!important;
+}
+.chatState-keyboardOpen.chatWasMinimized .chatLayer .chat{
+  background:transparent!important;
+}
+.chatState-keyboardOpen.chatWasMinimized .chatLayer .log{
+  justify-content:flex-end!important;
+}
+.phone.chatMode .top,.phone.chatMode .screens{
+  opacity:initial!important;
+  filter:none!important;
+  transform:none!important;
+}
+@media(max-width:480px){
+  .pageLayer .screen{padding:76px 14px 106px!important}
+  .chatLayer .bottomComposer{left:92px!important;right:18px!important}
+  .chatLayer .quickThread,.chatLayer .anchor{width:min(344px,calc(100% - 34px))!important}
+}
+</style>
+<style id="layerArchitectureRefine">
+.pageLayer .screens{
+  width:min(430px,100vw)!important;
+  left:50%!important;
+  right:auto!important;
+  transform:translateX(-50%)!important;
+}
+.chatLayer .top{
+  width:min(430px,100vw)!important;
+  left:50%!important;
+  right:auto!important;
+  transform:translateX(-50%)!important;
+}
+.chatLayer .bottomComposer,.phone.chatMode .chatLayer .bottomComposer,.phone.keyboardOpen .chatLayer .bottomComposer{
+  width:min(320px,calc(100vw - 110px))!important;
+  left:clamp(82px,calc(50vw - 123px),176px)!important;
+  right:auto!important;
+  transform:none!important;
+}
+.phone.chatMode .chatLayer .top,.phone.keyboardOpen .chatLayer .top{
+  width:min(430px,100vw)!important;
+  left:50%!important;
+  right:auto!important;
+  transform:translateX(-50%)!important;
+}
+.chatLayer .anchor,.phone.chatMode .chatLayer .anchor,.phone.keyboardOpen .chatLayer .anchor{
+  width:min(320px,calc(100vw - 110px))!important;
+  left:clamp(82px,calc(50vw - 123px),176px)!important;
+  right:auto!important;
+  transform:none!important;
+}
+.chatLayer .quickThread{
+  width:min(356px,calc(100vw - 44px))!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+}
+.phone .chatLayer .orb,.phone.chatMode .chatLayer .orb,.phone.keyboardOpen .chatLayer .orb{
+  left:-78px!important;
+  bottom:-66px!important;
+}
+.chatState-maximized .chatLayer .anchor,.chatState-keyboardOpen .chatLayer .anchor,
+.phone.chatState-maximized .chatLayer .anchor,.phone.chatState-keyboardOpen .chatLayer .anchor{
+  width:min(356px,calc(100vw - 44px))!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+}
+.chatState-maximized .phone .chatLayer .orb,.chatState-keyboardOpen .phone .chatLayer .orb,
+.phone.chatState-maximized .chatLayer .orb,.phone.chatState-keyboardOpen .chatLayer .orb{
+  left:-24px!important;
+}
+@media(max-width:480px){
+  .chatLayer .bottomComposer,.chatLayer .anchor,.phone.chatMode .chatLayer .bottomComposer,.phone.keyboardOpen .chatLayer .bottomComposer{
+    left:92px!important;
+    width:calc(100vw - 110px)!important;
+  }
+  .chatState-maximized .chatLayer .anchor,.chatState-keyboardOpen .chatLayer .anchor,
+  .phone.chatState-maximized .chatLayer .anchor,.phone.chatState-keyboardOpen .chatLayer .anchor{
+    left:50%!important;
+    width:min(344px,calc(100vw - 34px))!important;
+    transform:translateX(-50%)!important;
+  }
+  .phone.chatState-maximized .chatLayer .orb,.phone.chatState-keyboardOpen .chatLayer .orb{
+    left:-28px!important;
+  }
+}
+</style>
+<style id="headerChatPolish">
+.phone:after,.top:after,.chatLayer .top:after{
+  display:none!important;
+  content:none!important;
+  background:none!important;
+}
+.phone,.chatLayer,.chatLayer .anchor,.chatLayer .chat{
+  overflow:visible!important;
+}
+.pondLayer,.pageLayer{
+  overflow:hidden!important;
+}
+.chatState-maximized .chatLayer .log,.chatState-keyboardOpen .chatLayer .log{
+  padding-top:0!important;
+  mask-image:none!important;
+  -webkit-mask-image:none!important;
+}
+.quickBubble.typing,.chatLayer .quickBubble.typing{
+  align-self:flex-start!important;
+  width:50px!important;
+  min-width:50px!important;
+  height:34px!important;
+  min-height:34px!important;
+  margin:0!important;
+  padding:0!important;
+  transform:none!important;
+  display:block!important;
+  position:relative!important;
+}
+.quickBubble.typing:before,.chatLayer .quickBubble.typing:before{
+  left:13px!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+}
+.chatLayer .top{
+  background:transparent!important;
+}
+</style>
 </head>
 <body>
-<div class="stage"><div class="phone" id="phone"><div class="pond"><canvas id="pondCanvas"></canvas></div><div class="waterGlow"></div><header class="top"><button class="pill brandPill" id="switchBtn" type="button">Pond</button><div class="hudRight"><div class="pill coinPill" aria-label="Trophies"><span class="trophyIcon" aria-hidden="true"></span><span id="trophies">0</span></div><div class="pill coinPill" aria-label="Coins"><span class="coinIcon" aria-hidden="true"></span><span id="coins">0</span></div></div></header><div class="rewardToast hidden" id="rewardToast"></div><main class="screens"><section class="screen" id="home"><div class="heroCopy"><h1 id="greeting">Good evening.</h1></div><div class="week" id="week"></div><section class="panel"><div class="panelHead"><h2>Today's Done</h2></div><div class="list" id="doneList"></div></section></section><section class="screen hidden" id="pondScreen"></section></main><div class="quickThread hidden" id="quickThread"></div><form class="doneForm bottomComposer" id="doneForm"><input id="doneInput" placeholder="Say something to Grimm." autocomplete="off" maxlength="220"><button class="send">Send</button></form><div class="anchor"><section class="chat" id="chat"><div class="log" id="chatLog"></div></section><button class="speech" id="speech" type="button">Pond restored. Tap me if you need the full interrogation.</button><button class="orb" id="orb" type="button" aria-label="Open Grimm"><span class="badge" id="badge"></span></button></div></div></div>
+<div class="stage"><div class="phone chatState-minimized" id="phone"><div class="pondLayer" id="pondLayer"><div class="pond"><canvas id="pondCanvas"></canvas></div><div class="waterGlow"></div></div><main class="pageLayer" id="pageLayer"><div class="screens"><section class="screen" id="home"><div class="heroCopy"><h1 id="greeting">Good evening.</h1></div><div class="week" id="week"></div><section class="panel"><div class="panelHead"><h2>Today's Done</h2></div><div class="list" id="doneList"></div></section></section><section class="screen hidden" id="pondScreen"></section></div></main><section class="chatLayer" id="chatLayer"><header class="top"><button class="pill brandPill" id="switchBtn" type="button">Pond</button><div class="hudRight"><div class="pill coinPill" aria-label="Trophies"><span class="trophyIcon" aria-hidden="true"></span><span id="trophies">0</span></div><div class="pill coinPill" aria-label="Coins"><span class="coinIcon" aria-hidden="true"></span><span id="coins">0</span></div></div></header><div class="rewardToast hidden" id="rewardToast"></div><div class="quickThread hidden" id="quickThread"></div><div class="anchor"><section class="chat" id="chat"><div class="log" id="chatLog"></div></section><button class="speech" id="speech" type="button">Pond restored. Tap me if you need the full interrogation.</button><button class="orb" id="orb" type="button" aria-label="Open Grimm"><span class="badge" id="badge"></span></button></div><form class="doneForm bottomComposer" id="doneForm"><input id="doneInput" placeholder="Say something to Grimm." autocomplete="off" maxlength="220"><button class="send">Send</button></form></section></div></div>
 <span id="fedCount" hidden>0</span><span id="foodCount" hidden>0</span>
 <script src="app.js"></script>
 </body>

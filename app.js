@@ -57,6 +57,9 @@ Rules:
 `;
 
 const phone = $("phone");
+const pondLayerEl = $("pondLayer");
+const pageLayerEl = $("pageLayer");
+const chatLayerEl = $("chatLayer");
 const canvas = $("pondCanvas");
 const ctx = canvas.getContext("2d");
 const coinsEl = $("coins");
@@ -96,6 +99,9 @@ goldKoiSprite.src = "assets/koi-gold-cartoon-swim-v1.png";
 let state = load();
 ensureAiDefaults();
 let view = "home";
+let pondLayer;
+let pageLayer;
+let chatLayer;
 let w = 0;
 let h = 0;
 let fish = [];
@@ -603,6 +609,7 @@ function render() {
   $("trophies").textContent = state.trophies;
   $("greeting").textContent = greeting();
   phone.classList.toggle("workMode", Boolean(state.workTime));
+  chatLayer?.sync();
   renderWeek();
   renderDone();
   renderChat();
@@ -1227,41 +1234,109 @@ if (chatForm) {
 }
 
 $("switchBtn").addEventListener("click", () => {
-  view = view === "home" ? "pond" : "home";
-  $("home").classList.toggle("hidden", view !== "home");
-  $("pondScreen").classList.toggle("hidden", view !== "pond");
-  $("switchBtn").textContent = view === "home" ? "Pond" : "Home";
+  view = "pond";
+  $("home").classList.add("hidden");
+  $("pondScreen").classList.remove("hidden");
+  $("switchBtn").textContent = "Pond";
+  chatLayer?.close();
 });
 
 phone.addEventListener("click", e => {
-  if (e.target.closest("button,input,.chat,.doneForm,.week,.panel")) return;
-  if (view === "pond" && !$("pondScreen").classList.contains("hidden")) {
-    const r = phone.getBoundingClientRect();
-    dropFood(e.clientX - r.left, e.clientY - r.top);
-  }
+  if (e.target.closest(".chatLayer button,.chatLayer input,.chat,.doneForm,.week,.panel")) return;
+  if (chatLayer?.state === "maximized" || chatLayer?.state === "keyboardOpen") return;
+  pondLayer?.feed(e.clientX, e.clientY);
 });
 
+class PondLayer {
+  constructor(el) {
+    this.el = el;
+  }
+
+  feed(clientX, clientY) {
+    const r = phone.getBoundingClientRect();
+    dropFood(clientX - r.left, clientY - r.top);
+  }
+}
+
+class PageLayer {
+  constructor(el) {
+    this.el = el;
+  }
+
+  setHidden(hidden) {
+    this.el.toggleAttribute("aria-hidden", hidden);
+  }
+}
+
+class ChatLayer {
+  constructor(el) {
+    this.el = el;
+    this.state = "minimized";
+    this.beforeKeyboardState = "minimized";
+    this.keyboardLift = 0;
+    this.sync();
+  }
+
+  setState(next) {
+    if (next === "keyboardOpen" && this.state !== "keyboardOpen") this.beforeKeyboardState = this.state;
+    if (this.state === "keyboardOpen" && next !== "keyboardOpen") next = this.beforeKeyboardState;
+    this.state = next;
+    this.sync();
+  }
+
+  open() {
+    this.setState("maximized");
+  }
+
+  close() {
+    this.setState("minimized");
+  }
+
+  toggle() {
+    this.state === "maximized" ? this.close() : this.open();
+  }
+
+  setKeyboardLift(lift) {
+    this.keyboardLift = lift;
+    this.el.style.setProperty("--keyboard-lift", lift + "px");
+    if (lift > 24) this.setState("keyboardOpen");
+    else if (this.state === "keyboardOpen") this.setState(this.beforeKeyboardState);
+  }
+
+  sync() {
+    const isKeyboard = this.state === "keyboardOpen";
+    const isMax = this.state === "maximized" || (isKeyboard && this.beforeKeyboardState === "maximized");
+    phone.classList.toggle("chatMode", isMax || isKeyboard);
+    phone.classList.toggle("keyboardOpen", isKeyboard);
+    phone.classList.toggle("chatState-minimized", this.state === "minimized");
+    phone.classList.toggle("chatState-maximized", this.state === "maximized");
+    phone.classList.toggle("chatState-keyboardOpen", isKeyboard);
+    phone.classList.toggle("chatWasMinimized", isKeyboard && this.beforeKeyboardState === "minimized");
+    phone.classList.toggle("chatWasMaximized", isKeyboard && this.beforeKeyboardState === "maximized");
+    pageLayer?.setHidden(isMax);
+    chat.classList.toggle("open", isMax || isKeyboard);
+    speech.classList.add("hidden");
+    if (this.state === "minimized") speech.textContent = latestGrimm();
+    if (isMax || isKeyboard) {
+      quickThread?.classList.add("hidden");
+      state.unread = false;
+      renderChat();
+      save();
+    }
+    updateBadge();
+  }
+}
+
 function openChat() {
-  phone.classList.add("chatMode");
-  chat.classList.add("open");
-  speech.classList.add("hidden");
-  quickThread?.classList.add("hidden");
-  state.unread = false;
-  updateBadge();
-  save();
-  renderChat();
+  chatLayer.open();
 }
 
 function closeChat() {
-  phone.classList.remove("chatMode");
-  chat.classList.remove("open");
-  speech.classList.add("hidden");
-  speech.textContent = latestGrimm();
-  updateBadge();
+  chatLayer.close();
 }
 
 function toggleChat() {
-  chat.classList.contains("open") ? closeChat() : openChat();
+  chatLayer.toggle();
 }
 
 function promptForProof() {
@@ -1275,13 +1350,17 @@ function promptForProof() {
   }, 700);
 }
 
+pondLayer = new PondLayer(pondLayerEl);
+pageLayer = new PageLayer(pageLayerEl);
+chatLayer = new ChatLayer(chatLayerEl);
+
 orb.addEventListener("click", toggleChat);
 speech.addEventListener("click", toggleChat);
 window.addEventListener("resize", resize);
 if (window.visualViewport) {
   const liftForKeyboard = () => {
     const lift = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
-    document.documentElement.style.setProperty("--keyboard-lift", lift + "px");
+    chatLayer.setKeyboardLift(lift);
   };
   window.visualViewport.addEventListener("resize", liftForKeyboard);
   window.visualViewport.addEventListener("scroll", liftForKeyboard);
