@@ -14,8 +14,13 @@ const base = {
   doneItems: [],
   fed: 0,
   unread: false,
+  pendingDecision: null,
   lastPromptDate: "",
-  ai: { mode: "local", endpoint: "", model: "claude" },
+  workTime: false,
+  feedback: [],
+  notebook: [],
+  codexTasks: [],
+  ai: { mode: "bridge", endpoint: "", model: "openai" },
   chat: [
     { role: "g", text: "I am Grimm. Log real proof, feed the pond, and do not try to impress me with vibes." }
   ],
@@ -89,6 +94,7 @@ koiSprite.src = "assets/koi-topdown-swim-v1.png";
 goldKoiSprite.src = "assets/koi-gold-cartoon-swim-v1.png";
 
 let state = load();
+ensureAiDefaults();
 let view = "home";
 let w = 0;
 let h = 0;
@@ -137,6 +143,19 @@ function merge(a, b) {
 
 function save() {
   localStorage.setItem(KEY, JSON.stringify(state));
+}
+
+function defaultGrimmEndpoint() {
+  if (location.protocol === "file:") return "http://127.0.0.1:8787/grimm";
+  if (["127.0.0.1", "localhost"].includes(location.hostname)) return "http://127.0.0.1:8787/grimm";
+  return "/api/grimm";
+}
+
+function ensureAiDefaults() {
+  state.ai ||= {};
+  if (!state.ai.endpoint || state.ai.endpoint === "local") state.ai.endpoint = defaultGrimmEndpoint();
+  state.ai.model ||= "openai";
+  state.ai.mode ||= "bridge";
 }
 
 function resize() {
@@ -587,11 +606,13 @@ function render() {
   coinsEl.textContent = state.coins;
   $("trophies").textContent = state.trophies;
   $("greeting").textContent = greeting();
+  phone.classList.toggle("workMode", Boolean(state.workTime));
   renderWeek();
   renderDone();
   renderChat();
   fedCount.textContent = state.fed;
   foodCount.textContent = pellets.length;
+  updateBadge();
   save();
 }
 
@@ -614,7 +635,7 @@ function renderWeek() {
     const iso = day.toISOString().slice(0, 10);
     const el = document.createElement("div");
     el.className = "day " + (state.dayCrosses.includes(iso) ? "done" : "");
-    el.innerHTML = '<span class="dot">x</span><span>' + labels[i] + '</span>';
+    el.innerHTML = '<span class="dot">×</span><span>' + labels[i] + '</span>';
     weekEl.appendChild(el);
   }
 }
@@ -646,13 +667,50 @@ function renderDone() {
 
 function renderChat() {
   chatLog.replaceChildren();
-  for (const m of state.chat.slice(-80)) {
+  const messages = state.chat.slice(-80);
+  messages.forEach((m, index) => {
     const b = document.createElement("div");
     b.className = "bubble " + m.role;
     b.textContent = m.text;
     chatLog.appendChild(b);
-  }
+    if (m.role === "g" && state.pendingDecision?.messageAt === m.at) {
+      chatLog.appendChild(decisionButtons());
+    }
+  });
   chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function decisionButtons() {
+  const row = document.createElement("div");
+  row.className = "decisionRow";
+  const yes = document.createElement("button");
+  const no = document.createElement("button");
+  yes.type = "button";
+  no.type = "button";
+  yes.textContent = "YES";
+  no.textContent = "NO";
+  yes.addEventListener("click", () => resolveDecision(true));
+  no.addEventListener("click", () => resolveDecision(false));
+  row.append(yes, no);
+  return row;
+}
+
+function updateBadge() {
+  const hasVisibleDecision = Boolean(state.pendingDecision?.messageAt);
+  badge.style.display = hasVisibleDecision && !chat.classList.contains("open") ? "block" : "none";
+}
+
+function resolveDecision(accepted) {
+  const decision = state.pendingDecision;
+  state.pendingDecision = null;
+  updateBadge();
+  if (!decision) {
+    render();
+    return;
+  }
+  user(accepted ? "YES" : "NO");
+  say(accepted ? "Approved. I will keep that task warm for Codex." : "Rejected. Tossed into the pond. Next problem?", false);
+  render();
 }
 
 function quickBubble(role, text, typing = false) {
@@ -663,7 +721,7 @@ function quickBubble(role, text, typing = false) {
   return b;
 }
 
-function showQuickThread({ userText = "", grimmText = "", typing = false, hold = 5600 } = {}) {
+function showQuickThread({ userText = "", grimmText = "", typing = false, hold = 13500 } = {}) {
   if (!quickThread) return;
   quickThread.classList.remove("leaving");
   quickThread.replaceChildren();
@@ -675,7 +733,7 @@ function showQuickThread({ userText = "", grimmText = "", typing = false, hold =
   clearTimeout(showQuickThread.timer);
   showQuickThread.timer = setTimeout(() => {
     quickThread.classList.add("leaving");
-    setTimeout(() => quickThread.classList.add("hidden"), 1500);
+    setTimeout(() => quickThread.classList.add("hidden"), 2300);
   }, hold);
 }
 
@@ -690,7 +748,12 @@ function latestGrimm() {
 }
 
 function say(text, renderNow = true) {
-  state.chat.push({ role: "g", text, at: new Date().toISOString() });
+  const message = { role: "g", text, at: new Date().toISOString() };
+  state.chat.push(message);
+  if (state.pendingDecision?.attachToNextReply) {
+    state.pendingDecision.messageAt = message.at;
+    delete state.pendingDecision.attachToNextReply;
+  }
   speech.textContent = text;
   const quickUser = pendingQuickUser;
   pendingQuickUser = "";
@@ -702,14 +765,14 @@ function say(text, renderNow = true) {
   if (!chat.classList.contains("open")) {
     state.unread = true;
     speech.classList.add("hidden");
-    badge.style.display = "none";
+    updateBadge();
     say.hideTimer = setTimeout(() => {
       speech.classList.add("hidden");
-      badge.style.display = state.unread ? "block" : "none";
+      updateBadge();
     }, 5600);
   } else {
     state.unread = false;
-    badge.style.display = "none";
+    updateBadge();
   }
   if (renderNow) render();
 }
@@ -735,9 +798,75 @@ function buildCaseStudy() {
     recentEvidence: state.caseFile.evidence.slice(-20),
     todayDone: state.doneItems.filter(x => x.date === today()).slice(-8),
     todayGoal: todayGoal(),
+    feedback: (state.feedback || []).slice(-10),
+    notebook: (state.notebook || []).slice(-10),
+    codexTasks: (state.codexTasks || []).slice(-10),
+    workTime: state.workTime,
     coins: state.coins,
     trophies: state.trophies
   };
+}
+
+function applyAiStructured(ai, sourceText = "") {
+  if (!ai || typeof ai !== "object") return;
+  const at = new Date().toISOString();
+  if (ai.theory) addTheory(String(ai.theory), .58);
+  if (ai.memoryUpdate && Object.keys(ai.memoryUpdate).length) {
+    state.caseFile.evidence.push({
+      type: "memory-update",
+      statement: JSON.stringify(ai.memoryUpdate).slice(0, 220),
+      at
+    });
+  }
+  if (ai.feedbackUpdate) {
+    const item = {
+      id: crypto.randomUUID(),
+      original: sourceText,
+      summary: String(ai.feedbackUpdate.summary || sourceText),
+      category: String(ai.feedbackUpdate.category || "other"),
+      frequency: Number(ai.feedbackUpdate.frequency || 1),
+      status: String(ai.feedbackUpdate.status || "new"),
+      createdAt: at,
+      updatedAt: at
+    };
+    state.feedback ||= [];
+    state.feedback.push(item);
+  }
+  if (ai.notebookUpdate) {
+    const entry = {
+      id: crypto.randomUUID(),
+      text: String(ai.notebookUpdate.text || ai.notebookUpdate),
+      basis: String(ai.notebookUpdate.basis || sourceText),
+      tags: Array.isArray(ai.notebookUpdate.tags) ? ai.notebookUpdate.tags : [],
+      visibility: String(ai.notebookUpdate.visibility || "private"),
+      createdAt: at
+    };
+    state.notebook ||= [];
+    state.notebook.push(entry);
+  }
+  if (ai.codexTask) {
+    state.codexTasks ||= [];
+    state.codexTasks.push({ id: crypto.randomUUID(), text: String(ai.codexTask), status: "draft", createdAt: at });
+    state.caseFile.evidence.push({ type: "codex-task", statement: String(ai.codexTask), at });
+    state.pendingDecision = {
+      type: "codexTask",
+      text: String(ai.codexTask),
+      createdAt: at,
+      attachToNextReply: true
+    };
+  }
+  if (ai.goalUpdate) {
+    const goalText = typeof ai.goalUpdate === "string" ? ai.goalUpdate : ai.goalUpdate.text;
+    if (goalText) setTodayGoal(goalText);
+  }
+  if (ai.mode === "workshop") {
+    state.workTime = true;
+    if (!ai.codexTask) state.pendingDecision = null;
+  }
+  if ((ai.mode === "normal" && state.workTime && /work done/i.test(sourceText)) || /simon says work done/i.test(sourceText)) {
+    state.workTime = false;
+    state.pendingDecision = null;
+  }
 }
 
 async function callGrimmAI(task, input) {
@@ -764,6 +893,7 @@ async function judgeActivity(text) {
   try {
     const ai = await callGrimmAI("judge", { text });
     if (ai && typeof ai.valid === "boolean") {
+      applyAiStructured(ai, text);
       return {
         valid: ai.valid,
         score: clamp(Number(ai.score || 0), -24, 44),
@@ -814,12 +944,31 @@ async function grimmReply(text) {
   if (isLocalCommand(text)) return localReply(text);
   try {
     const ai = await callGrimmAI("chat", { text, recentChat: state.chat.slice(-12) });
-    if (ai?.theory) addTheory(ai.theory, .58);
+    applyAiStructured(ai, text);
     if (ai?.reply) return ensureQuestion(String(ai.reply), text);
   } catch (err) {
     state.caseFile.evidence.push({ type: "ai-error", statement: err.message, at: new Date().toISOString() });
   }
   return localReply(text);
+}
+
+async function simonReply(text) {
+  try {
+    const ai = await callGrimmAI("chat", {
+      text,
+      recentChat: state.chat.slice(-12),
+      ownerCommand: true,
+      workTime: state.workTime
+    });
+    applyAiStructured(ai, text);
+    if (ai?.reply) {
+      return String(ai.reply) + (ai.codexTask ? " Codex task: " + ai.codexTask : "");
+    }
+  } catch (err) {
+    state.caseFile.evidence.push({ type: "ai-error", statement: err.message, at: new Date().toISOString() });
+  }
+  const admin = handleSimonCommand(text);
+  return admin.reply + (admin.codexTask ? " Codex task: " + admin.codexTask : "");
 }
 
 function ensureQuestion(reply, text = "") {
@@ -857,6 +1006,73 @@ function judgedGoalReply(j, goalReached) {
   return talkativeJudgeReply(j);
 }
 
+function isSimonCommand(text) {
+  return text.toLowerCase().trim().startsWith("simon says");
+}
+
+function cleanCodexTask(command) {
+  const raw = command.replace(/^simon says\s*/i, "").trim();
+  if (!raw) return "Review the Grimm project and propose the next smallest useful implementation task.";
+  if (/^make\b/i.test(raw)) return "Create " + raw.replace(/^make\s+/i, "").trim() + ".";
+  if (/^add\b/i.test(raw)) return "Add " + raw.replace(/^add\s+/i, "").trim() + ".";
+  if (/^fix\b/i.test(raw)) return "Fix " + raw.replace(/^fix\s+/i, "").trim() + ".";
+  return raw.charAt(0).toUpperCase() + raw.slice(1) + ".";
+}
+
+function handleSimonCommand(text) {
+  const l = text.toLowerCase().trim();
+  if (l === "simon says work time") {
+    state.workTime = true;
+    state.pendingDecision = null;
+    return {
+      reply: "Workshop open. Normal coins are dead in here. What problem are we dissecting first?",
+      codexTask: null
+    };
+  }
+  if (l === "simon says work done") {
+    state.workTime = false;
+    state.pendingDecision = null;
+    return {
+      reply: "Workshop closed. I am going back under the pond. Try to behave.",
+      codexTask: null
+    };
+  }
+  const codexTask = cleanCodexTask(text);
+  const task = { id: crypto.randomUUID(), text: codexTask, status: "draft", createdAt: new Date().toISOString() };
+  state.codexTasks ||= [];
+  state.codexTasks.push(task);
+  state.caseFile.evidence.push({ type: "codex-task", statement: codexTask, at: task.createdAt });
+  state.pendingDecision = {
+    type: "codexTask",
+    text: codexTask,
+    createdAt: task.createdAt,
+    attachToNextReply: true
+  };
+  return {
+    reply: "Fine. I wrote the task. Try not to ruin it.",
+    codexTask
+  };
+}
+
+function detectFeedback(text) {
+  return /\b(i wish|it would be cool if|you should add|can you add|please add|would be nice if)\b/i.test(text);
+}
+
+function saveFeedback(text) {
+  state.feedback ||= [];
+  const summary = text.replace(/\s+/g, " ").trim();
+  const category = /fish|koi|pond/i.test(text) ? "fish" : /coin|trophy|reward/i.test(text) ? "rewards" : /chat|grimm|memory/i.test(text) ? "grimm" : "other";
+  const existing = state.feedback.find(f => f.summary.toLowerCase() === summary.toLowerCase());
+  if (existing) {
+    existing.frequency += 1;
+    existing.updatedAt = new Date().toISOString();
+    return existing;
+  }
+  const item = { id: crypto.randomUUID(), original: text, summary, category, frequency: 1, status: "new", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  state.feedback.push(item);
+  return item;
+}
+
 function isLocalCommand(text) {
   const l = text.toLowerCase();
   return l.startsWith("api endpoint:") || l === "api status" || l === "api off" || l === "case report" || l === "case file" || l === "case reset";
@@ -871,23 +1087,23 @@ async function localReply(text) {
   const l = text.toLowerCase();
   if (l.startsWith("api endpoint:")) {
     state.ai.endpoint = text.slice(13).trim();
-    state.ai.mode = state.ai.endpoint ? "claude-ready" : "local";
+    state.ai.mode = state.ai.endpoint ? "bridge" : "local";
     if (!state.ai.endpoint) return "Endpoint empty. Back to my pocket brain.";
     const health = await checkApiHealth();
     return health.ok
-      ? "Endpoint stored. Bridge is alive. Claude key: " + (health.hasApiKey ? "yes." : "missing.")
+      ? "Endpoint stored. Bridge is alive. AI key: " + (health.hasApiKey ? "yes." : "missing, mock brain active.")
       : "Endpoint stored, but the bridge did not answer yet.";
   }
   if (l === "api off") {
     state.ai.endpoint = "";
     state.ai.mode = "local";
-    return "Claude line cut. Local Grimm remains judgmental.";
+    return "AI bridge cut. Local Grimm remains judgmental.";
   }
   if (l === "api status") {
     if (!state.ai.endpoint) return "No endpoint yet. I am running locally.";
     const health = await checkApiHealth();
     if (!health.ok) return "Endpoint saved, bridge silent. Start the server.";
-    return "Bridge alive. Claude key: " + (health.hasApiKey ? "yes. Let us cause judgment." : "missing. Add .env.");
+    return "Bridge alive. AI key: " + (health.hasApiKey ? "yes. Let us cause judgment." : "missing. Mock Grimm is covering the pond.");
   }
   if (l === "case report" || l === "case file") return caseReport();
   if (l === "case reset") {
@@ -914,8 +1130,8 @@ async function localReply(text) {
 
 async function checkApiHealth() {
   try {
-    const url = new URL(state.ai.endpoint);
-    url.pathname = "/health";
+    const url = new URL(state.ai.endpoint, location.origin);
+    url.pathname = url.pathname.startsWith("/api/") ? "/api/health" : "/health";
     url.search = "";
     const response = await fetch(url.toString(), { method: "GET" });
     if (!response.ok) return { ok: false };
@@ -960,6 +1176,19 @@ $("doneForm").addEventListener("submit", async e => {
   render();
 
   try {
+    if (isSimonCommand(text)) {
+      await answerWithGrimm(text, () => simonReply(text));
+      render();
+      return;
+    }
+
+    if (detectFeedback(text)) {
+      saveFeedback(text);
+      await answerWithGrimm(text, () => grimmReply(text));
+      render();
+      return;
+    }
+
     const detectedGoal = detectGoal(text);
     if (detectedGoal) {
       const goal = setTodayGoal(detectedGoal);
@@ -1026,19 +1255,22 @@ phone.addEventListener("click", e => {
 });
 
 function openChat() {
+  phone.classList.add("chatMode");
   chat.classList.add("open");
   speech.classList.add("hidden");
   quickThread?.classList.add("hidden");
-  badge.style.display = "none";
   state.unread = false;
+  updateBadge();
   save();
   renderChat();
 }
 
 function closeChat() {
+  phone.classList.remove("chatMode");
   chat.classList.remove("open");
   speech.classList.add("hidden");
   speech.textContent = latestGrimm();
+  updateBadge();
 }
 
 function toggleChat() {
@@ -1071,7 +1303,7 @@ if (window.visualViewport) {
 resize();
 speech.textContent = latestGrimm();
 speech.classList.add("hidden");
-badge.style.display = state.unread ? "block" : "none";
+updateBadge();
 render();
 promptForProof();
 requestAnimationFrame(loop);

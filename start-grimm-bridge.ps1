@@ -9,7 +9,7 @@ if (-not (Test-Path $node)) {
 
 if (-not (Test-Path (Join-Path $PSScriptRoot ".env"))) {
   Write-Host "Missing .env file."
-  Write-Host "Copy .env.example to .env, then add your ANTHROPIC_API_KEY."
+  Write-Host "Copy .env.example to .env, then add OPENAI_API_KEY or ANTHROPIC_API_KEY."
   exit 1
 }
 

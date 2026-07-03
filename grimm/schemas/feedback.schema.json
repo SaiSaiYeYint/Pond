@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Grimm Feedback",
+  "type": "object",
+  "required": ["items"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "original", "summary", "category", "frequency", "status", "createdAt", "updatedAt"],
+        "properties": {
+          "id": { "type": "string" },
+          "original": { "type": "string" },
+          "summary": { "type": "string" },
+          "category": { "enum": ["fish", "pond", "grimm", "memory", "rewards", "ui", "learning", "other"] },
+          "frequency": { "type": "integer", "minimum": 1 },
+          "status": { "enum": ["new", "reviewing", "approved", "rejected", "tasked", "shipped"] },
+          "codexTask": { "type": ["string", "null"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}
+
