@@ -686,6 +686,11 @@ function renderChat() {
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
+function scrollChatToLatest() {
+  if (!chatLog) return;
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
 function decisionButtons() {
   const row = document.createElement("div");
   row.className = "decisionRow";
@@ -1315,7 +1320,10 @@ class ChatLayer {
 
   setInputFocused(focused) {
     this.inputFocused = focused;
-    if (focused) this.setState("keyboard");
+    if (focused) {
+      this.setState("keyboard");
+      settleChatScroll();
+    }
     if (!focused && this.state === "keyboard") this.setState(this.beforeKeyboardState);
   }
 
@@ -1368,6 +1376,18 @@ function pinViewportDuringKeyboard() {
   requestAnimationFrame(tick);
 }
 
+function settleChatScroll() {
+  let frames = 0;
+  const tick = () => {
+    scrollChatToLatest();
+    frames += 1;
+    if (frames < 18 && chatLayer?.state === "keyboard") requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+  setTimeout(scrollChatToLatest, 120);
+  setTimeout(scrollChatToLatest, 280);
+}
+
 function promptForProof() {
   if (state.lastPromptDate === today()) return;
   state.lastPromptDate = today();
@@ -1407,7 +1427,10 @@ if (window.visualViewport) {
   const liftForKeyboard = () => {
     const lift = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
     chatLayer.setKeyboardLift(lift);
-    if (chatLayer.state === "keyboard") pinViewport();
+    if (chatLayer.state === "keyboard") {
+      pinViewport();
+      settleChatScroll();
+    }
   };
   window.visualViewport.addEventListener("resize", liftForKeyboard);
   window.visualViewport.addEventListener("scroll", liftForKeyboard);
