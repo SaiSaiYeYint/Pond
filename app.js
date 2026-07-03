@@ -1309,13 +1309,13 @@ class ChatLayer {
   setKeyboardLift(lift) {
     this.keyboardLift = lift;
     this.el.style.setProperty("--keyboard-lift", lift + "px");
-    if (this.inputFocused && lift > 24) this.setState("keyboard");
+    if (this.inputFocused) this.setState("keyboard");
     else if (this.state === "keyboard") this.setState(this.beforeKeyboardState);
   }
 
   setInputFocused(focused) {
     this.inputFocused = focused;
-    if (focused && this.keyboardLift > 24) this.setState("keyboard");
+    if (focused) this.setState("keyboard");
     if (!focused && this.state === "keyboard") this.setState(this.beforeKeyboardState);
   }
 
@@ -1351,6 +1351,23 @@ function toggleChat() {
   chatLayer.toggle();
 }
 
+function pinViewport() {
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  window.scrollTo(0, 0);
+}
+
+function pinViewportDuringKeyboard() {
+  pinViewport();
+  let frames = 0;
+  const tick = () => {
+    pinViewport();
+    frames += 1;
+    if (frames < 24 && chatLayer?.state === "keyboard") requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
 function promptForProof() {
   if (state.lastPromptDate === today()) return;
   state.lastPromptDate = today();
@@ -1368,16 +1385,29 @@ chatLayer = new ChatLayer(chatLayerEl);
 
 orb.addEventListener("click", toggleChat);
 speech.addEventListener("click", toggleChat);
-doneInput.addEventListener("focus", () => chatLayer.setInputFocused(true));
+doneInput.addEventListener("touchstart", e => {
+  e.preventDefault();
+  chatLayer.setInputFocused(true);
+  doneInput.focus({ preventScroll: true });
+  pinViewportDuringKeyboard();
+}, { passive: false });
+doneInput.addEventListener("focus", () => {
+  chatLayer.setInputFocused(true);
+  pinViewportDuringKeyboard();
+});
 doneInput.addEventListener("blur", () => setTimeout(() => chatLayer.setInputFocused(false), 80));
 document.addEventListener("touchmove", e => {
   if (chatLayer?.state === "keyboard" && !e.target.closest(".log")) e.preventDefault();
+}, { passive: false });
+window.addEventListener("scroll", () => {
+  if (chatLayer?.state === "keyboard") pinViewport();
 }, { passive: false });
 window.addEventListener("resize", resize);
 if (window.visualViewport) {
   const liftForKeyboard = () => {
     const lift = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
     chatLayer.setKeyboardLift(lift);
+    if (chatLayer.state === "keyboard") pinViewport();
   };
   window.visualViewport.addEventListener("resize", liftForKeyboard);
   window.visualViewport.addEventListener("scroll", liftForKeyboard);
