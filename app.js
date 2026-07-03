@@ -113,6 +113,7 @@ let glints = [];
 let causticSeed = Math.random() * 999;
 let pendingQuickUser = "";
 let grimmTypingInChat = false;
+let viewportManager;
 const FOOD_TTL = 6500;
 const FOOD_FADE = 1400;
 const KOI_FRAME = 256;
@@ -173,6 +174,45 @@ function resize() {
   canvas.style.height = h + "px";
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   if (!fish.length) initPond();
+}
+
+class ViewportManager {
+  constructor(root) {
+    this.root = root;
+    this.lastHeight = 0;
+    this.update = this.update.bind(this);
+  }
+
+  start() {
+    this.update();
+    window.addEventListener("resize", this.update);
+    window.addEventListener("orientationchange", this.update);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", this.update);
+      window.visualViewport.addEventListener("scroll", this.update);
+    }
+  }
+
+  update() {
+    const vv = window.visualViewport;
+    const visibleHeight = vv ? vv.height : window.innerHeight;
+    const offsetTop = vv ? vv.offsetTop : 0;
+    const bottomGap = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
+    const keyboard = chatLayer?.inputFocused ? bottomGap : 0;
+    const bottomInset = 0;
+    this.root.style.setProperty("--app-height", Math.round(visibleHeight) + "px");
+    this.root.style.setProperty("--visible-bottom-inset", Math.round(bottomInset) + "px");
+    chatLayer?.setKeyboardLift(Math.round(keyboard));
+    if (chatLayer?.state === "keyboard") {
+      pinViewport();
+      settleChatScroll();
+    }
+    if (Math.abs(visibleHeight - this.lastHeight) > 1) {
+      this.lastHeight = visibleHeight;
+      resize();
+    }
+    if (offsetTop) pinViewport();
+  }
 }
 
 function initPond() {
@@ -1424,34 +1464,26 @@ doneInput.addEventListener("touchstart", e => {
   e.preventDefault();
   chatLayer.setInputFocused(true);
   doneInput.focus({ preventScroll: true });
+  viewportManager?.update();
   pinViewportDuringKeyboard();
 }, { passive: false });
 doneInput.addEventListener("focus", () => {
   chatLayer.setInputFocused(true);
+  viewportManager?.update();
   pinViewportDuringKeyboard();
 });
-doneInput.addEventListener("blur", () => setTimeout(() => chatLayer.setInputFocused(false), 80));
+doneInput.addEventListener("blur", () => setTimeout(() => {
+  chatLayer.setInputFocused(false);
+  viewportManager?.update();
+}, 80));
 document.addEventListener("touchmove", e => {
   if (chatLayer?.state === "keyboard" && !e.target.closest(".log")) e.preventDefault();
 }, { passive: false });
 window.addEventListener("scroll", () => {
   if (chatLayer?.state === "keyboard") pinViewport();
 }, { passive: false });
-window.addEventListener("resize", resize);
-if (window.visualViewport) {
-  const liftForKeyboard = () => {
-    const lift = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
-    chatLayer.setKeyboardLift(lift);
-    if (chatLayer.state === "keyboard") {
-      pinViewport();
-      settleChatScroll();
-    }
-  };
-  window.visualViewport.addEventListener("resize", liftForKeyboard);
-  window.visualViewport.addEventListener("scroll", liftForKeyboard);
-  liftForKeyboard();
-}
-resize();
+viewportManager = new ViewportManager(document.documentElement);
+viewportManager.start();
 speech.textContent = latestGrimm();
 speech.classList.add("hidden");
 updateBadge();
