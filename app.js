@@ -74,6 +74,7 @@ const rewardToast = $("rewardToast");
 const quickThread = $("quickThread");
 const fedCount = $("fedCount");
 const foodCount = $("foodCount");
+const doneInput = $("doneInput");
 
 const bgImage = new Image();
 const fgImage = new Image();
@@ -1280,11 +1281,14 @@ class ChatLayer {
     this.state = "minimized";
     this.beforeKeyboardState = "minimized";
     this.keyboardLift = 0;
+    this.inputFocused = false;
     this.sync();
   }
 
   setState(next) {
-    if (next === "keyboard" && this.state !== "keyboard") this.beforeKeyboardState = this.state;
+    if (next === "keyboard" && this.state !== "keyboard") {
+      this.beforeKeyboardState = this.state === "maximized" ? "maximized" : "minimized";
+    }
     if (this.state === "keyboard" && next !== "keyboard") next = this.beforeKeyboardState;
     this.state = next;
     this.sync();
@@ -1305,8 +1309,14 @@ class ChatLayer {
   setKeyboardLift(lift) {
     this.keyboardLift = lift;
     this.el.style.setProperty("--keyboard-lift", lift + "px");
-    if (lift > 24) this.setState("keyboard");
+    if (this.inputFocused && lift > 24) this.setState("keyboard");
     else if (this.state === "keyboard") this.setState(this.beforeKeyboardState);
+  }
+
+  setInputFocused(focused) {
+    this.inputFocused = focused;
+    if (focused && this.keyboardLift > 24) this.setState("keyboard");
+    if (!focused && this.state === "keyboard") this.setState(this.beforeKeyboardState);
   }
 
   sync() {
@@ -1358,6 +1368,11 @@ chatLayer = new ChatLayer(chatLayerEl);
 
 orb.addEventListener("click", toggleChat);
 speech.addEventListener("click", toggleChat);
+doneInput.addEventListener("focus", () => chatLayer.setInputFocused(true));
+doneInput.addEventListener("blur", () => setTimeout(() => chatLayer.setInputFocused(false), 80));
+document.addEventListener("touchmove", e => {
+  if (chatLayer?.state === "keyboard" && !e.target.closest(".log")) e.preventDefault();
+}, { passive: false });
 window.addEventListener("resize", resize);
 if (window.visualViewport) {
   const liftForKeyboard = () => {

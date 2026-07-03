@@ -31,7 +31,8 @@ h1{font-size:28px; line-height:1; margin:0 0 6px; letter-spacing:0}
 /* chatLayer */
 .chatLayer{position:absolute; inset:0; z-index:100; pointer-events:none; overflow:visible; touch-action:none; --keyboard-lift:0px}
 .top{position:absolute; left:50%; top:0; width:var(--phone-width); transform:translateX(-50%); z-index:20; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:16px; background:transparent; pointer-events:auto}
-.bottomComposer{position:absolute; left:calc(50% + var(--dock-shift)); transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 12px + var(--keyboard-lift)); z-index:40; width:var(--dock-width); margin:0; display:grid; grid-template-columns:minmax(0,1fr)52px; gap:8px; background:rgba(3,10,9,.68); border:1px solid rgba(255,255,255,.09); border-radius:20px; padding:6px; backdrop-filter:blur(18px); box-shadow:0 18px 46px rgba(0,0,0,.38); pointer-events:auto}
+.chatDock{position:absolute; left:calc(50% + var(--dock-shift)); transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 12px + var(--keyboard-lift)); z-index:45; width:var(--dock-width); pointer-events:none; transition:bottom .28s cubic-bezier(.2,.8,.2,1)}
+.bottomComposer{width:100%; margin:0; display:grid; grid-template-columns:minmax(0,1fr)52px; gap:8px; background:rgba(3,10,9,.68); border:1px solid rgba(255,255,255,.09); border-radius:20px; padding:6px; backdrop-filter:blur(18px); box-shadow:0 18px 46px rgba(0,0,0,.38); pointer-events:auto}
 .bottomComposer input{min-height:46px; padding:11px 9px; font-size:16px}
 .bottomComposer .send{min-width:52px; padding:0; border-radius:15px}
 .bottomComposer.thinking{opacity:.82}
@@ -39,17 +40,17 @@ h1{font-size:28px; line-height:1; margin:0 0 6px; letter-spacing:0}
 .bottomComposer.thinking .send:after{content:""; position:absolute; inset:15px; margin:auto; width:12px; height:12px; border-radius:50%; border:2px solid rgba(20,23,19,.28); border-top-color:#151713; animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}
 }
-.quickThread{position:absolute; left:50%; bottom:calc(env(safe-area-inset-bottom) + 78px + var(--keyboard-lift)); z-index:35; width:min(356px,calc(100vw - 44px)); display:flex; flex-direction:column; gap:8px; align-items:stretch; transform:translateX(-50%); pointer-events:none}
+.quickThread{position:absolute; left:50%; bottom:calc(env(safe-area-inset-bottom) + 78px); z-index:35; width:min(356px,calc(100vw - 44px)); display:flex; flex-direction:column; gap:8px; align-items:stretch; transform:translateX(-50%); pointer-events:none}
 .quickThread.hidden{display:none}
 .quickThread.leaving .quickBubble.u{animation:bubbleOutSmooth 1.15s ease forwards}
 .quickThread.leaving .quickBubble.g{animation:bubbleOutSmooth 1.15s ease .42s forwards}
-.anchor{position:absolute; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 78px + var(--keyboard-lift)); z-index:30; width:var(--dock-width); display:flex; align-items:stretch; overflow:visible; pointer-events:none}
+.anchor{position:absolute; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 78px); z-index:30; width:var(--dock-width); display:flex; align-items:stretch; overflow:visible; pointer-events:none; transition:top .28s cubic-bezier(.2,.8,.2,1),bottom .28s cubic-bezier(.2,.8,.2,1)}
 .chat{display:none; width:100%; margin:0; border:0; background:transparent; box-shadow:none; overflow:visible}
 .chat.open{display:flex; flex-direction:column; pointer-events:auto}
 .log{pointer-events:auto; height:auto; max-height:none; display:flex; flex-direction:column; gap:8px; background:transparent; padding:0; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; touch-action:pan-y; -webkit-overflow-scrolling:touch}
 .log::-webkit-scrollbar,.list::-webkit-scrollbar{display:none}
 .speech{display:none}
-.orb{position:absolute; left:calc(50% + var(--dock-shift) - (var(--dock-width) / 2) + var(--orb-left)); bottom:calc(env(safe-area-inset-bottom) + 12px + var(--keyboard-lift)); z-index:45; width:58px; height:58px; border-radius:50%; background:#030605; border:1px solid rgba(255,255,255,.14); box-shadow:0 12px 32px rgba(0,0,0,.42); display:grid; place-items:center; pointer-events:auto}
+.orb{position:absolute; left:var(--orb-left); bottom:0; z-index:45; width:58px; height:58px; border-radius:50%; background:#030605; border:1px solid rgba(255,255,255,.14); box-shadow:0 12px 32px rgba(0,0,0,.42); display:grid; place-items:center; pointer-events:auto}
 .orb:before{content:""; width:23px; height:7px; border-radius:999px; background:var(--gold); box-shadow:0 0 15px rgba(242,193,78,.9)}
 .orb.talk:before{height:19px; border-radius:50%; animation:stare .22s infinite alternate}
 .badge{position:absolute; top:-1px; right:-1px; width:12px; height:12px; border-radius:50%; background:var(--red); display:none; border:2px solid #030605; box-shadow:0 0 0 2px rgba(255,255,255,.1),0 0 14px var(--red)}
@@ -120,27 +121,24 @@ to{opacity:1; transform:translateX(0) translateY(0) scale(1)}
 .phone[data-chat-state="minimized"] .chat{display:none}
 .phone[data-chat-state="minimized"] .pageLayer{opacity:1; visibility:visible; pointer-events:none}
 .phone[data-chat-state="minimized"] .chatLayer>*{pointer-events:none}
-.phone[data-chat-state="minimized"] .top,.phone[data-chat-state="minimized"] .bottomComposer,.phone[data-chat-state="minimized"] .anchor,.phone[data-chat-state="minimized"] .orb{pointer-events:auto}
+.phone[data-chat-state="minimized"] .top,.phone[data-chat-state="minimized"] .chatDock,.phone[data-chat-state="minimized"] .anchor{pointer-events:auto}
 .phone[data-chat-state="maximized"] .pageLayer,.phone[data-chat-state="keyboard"][data-before-chat-state="maximized"] .pageLayer{opacity:0; visibility:hidden; pointer-events:none}
 .phone[data-chat-state="maximized"] .quickThread,.phone[data-chat-state="keyboard"] .quickThread{display:none}
-.phone[data-chat-state="maximized"] .anchor,.phone[data-chat-state="keyboard"] .anchor{left:50%; width:var(--chat-width); top:86px; bottom:calc(env(safe-area-inset-bottom) + 78px + var(--keyboard-lift))}
-.phone[data-chat-state="maximized"] .bottomComposer,.phone[data-chat-state="keyboard"] .bottomComposer{width:var(--dock-width)}
-.phone[data-chat-state="maximized"] .orb,.phone[data-chat-state="keyboard"] .orb{left:calc(50% + var(--dock-shift) - (var(--dock-width) / 2) + var(--orb-left))}
+.phone[data-chat-state="maximized"] .anchor{left:50%; width:var(--chat-width); top:86px; bottom:calc(env(safe-area-inset-bottom) + 78px)}
+.phone[data-chat-state="keyboard"] .anchor{left:50%; width:var(--chat-width); top:12px; bottom:calc(env(safe-area-inset-bottom) + 78px)}
+.phone[data-chat-state="maximized"] .chatDock,.phone[data-chat-state="keyboard"] .chatDock{pointer-events:auto}
 .phone[data-chat-state="maximized"] .chat,.phone[data-chat-state="keyboard"] .chat{display:flex; height:100%; flex-direction:column; align-items:center; width:100%}
 .phone[data-chat-state="maximized"] .log,.phone[data-chat-state="keyboard"] .log{height:100%; padding:0 0 12px; width:100%}
 .phone[data-chat-state="keyboard"] .top{opacity:0; visibility:hidden; pointer-events:none}
-.phone[data-chat-state="keyboard"] .anchor{top:12px}
 .phone[data-chat-state="keyboard"][data-before-chat-state="minimized"] .pageLayer{opacity:1; visibility:visible}
 .phone.workMode .bubble.g,.phone.workMode .quickBubble.g{background:rgba(3,8,8,.94); color:#f4fbf8; border-color:rgba(255,255,255,.1)}
 /* responsive */
 @media(max-width:480px){
 :root{--chat-width:calc(100vw - 32px); --dock-width:calc(100vw - 110px); --dock-shift:34px}.screen{padding:76px 14px 106px}
-.bottomComposer{left:calc(50% + var(--dock-shift)); transform:translateX(-50%); width:var(--dock-width)}
+.chatDock{left:calc(50% + var(--dock-shift)); transform:translateX(-50%); width:var(--dock-width)}
 .anchor{left:50%; transform:translateX(-50%); width:var(--dock-width)}
-.quickThread{width:min(344px,calc(100vw - 34px)); bottom:calc(env(safe-area-inset-bottom) + 78px + var(--keyboard-lift))}
+.quickThread{width:min(344px,calc(100vw - 34px)); bottom:calc(env(safe-area-inset-bottom) + 78px)}
 .phone[data-chat-state="maximized"] .anchor,.phone[data-chat-state="keyboard"] .anchor{width:var(--chat-width)}
-.phone[data-chat-state="maximized"] .bottomComposer,.phone[data-chat-state="keyboard"] .bottomComposer{width:var(--dock-width)}
-.phone[data-chat-state="maximized"] .orb,.phone[data-chat-state="keyboard"] .orb{left:calc(50% + var(--dock-shift) - (var(--dock-width) / 2) + var(--orb-left))}
 .week{min-height:80px; padding:13px}
 .day{font-size:11px; gap:7px}
 .dot{width:34px; height:34px}
@@ -154,11 +152,12 @@ to{opacity:1; transform:translateX(0) translateY(0) scale(1)}
 
 </style></head>
 <body>
-<div class="stage"><div class="phone" id="phone" data-chat-state="minimized"><div class="pondLayer" id="pondLayer"><div class="pond"><canvas id="pondCanvas"></canvas></div><div class="waterGlow"></div></div><main class="pageLayer" id="pageLayer"><div class="screens"><section class="screen" id="home"><div class="heroCopy"><h1 id="greeting">Good evening.</h1></div><div class="week" id="week"></div><section class="panel"><div class="panelHead"><h2>Today's Done</h2></div><div class="list" id="doneList"></div></section></section><section class="screen hidden" id="pondScreen"></section></div></main><section class="chatLayer" id="chatLayer"><header class="top"><button class="pill brandPill" id="switchBtn" type="button">Pond</button><div class="hudRight"><div class="pill coinPill" aria-label="Trophies"><span class="trophyIcon" aria-hidden="true"></span><span id="trophies">0</span></div><div class="pill coinPill" aria-label="Coins"><span class="coinIcon" aria-hidden="true"></span><span id="coins">0</span></div></div></header><div class="rewardToast hidden" id="rewardToast"></div><div class="quickThread hidden" id="quickThread"></div><div class="anchor"><section class="chat" id="chat"><div class="log" id="chatLog"></div></section><button class="speech" id="speech" type="button">Pond restored. Tap me if you need the full interrogation.</button></div><button class="orb" id="orb" type="button" aria-label="Open Grimm"><span class="badge" id="badge"></span></button><form class="doneForm bottomComposer" id="doneForm"><input id="doneInput" placeholder="Say something to Grimm." autocomplete="off" maxlength="220"><button class="send">Send</button></form></section></div></div>
+<div class="stage"><div class="phone" id="phone" data-chat-state="minimized"><div class="pondLayer" id="pondLayer"><div class="pond"><canvas id="pondCanvas"></canvas></div><div class="waterGlow"></div></div><main class="pageLayer" id="pageLayer"><div class="screens"><section class="screen" id="home"><div class="heroCopy"><h1 id="greeting">Good evening.</h1></div><div class="week" id="week"></div><section class="panel"><div class="panelHead"><h2>Today's Done</h2></div><div class="list" id="doneList"></div></section></section><section class="screen hidden" id="pondScreen"></section></div></main><section class="chatLayer" id="chatLayer"><header class="top"><button class="pill brandPill" id="switchBtn" type="button">Pond</button><div class="hudRight"><div class="pill coinPill" aria-label="Trophies"><span class="trophyIcon" aria-hidden="true"></span><span id="trophies">0</span></div><div class="pill coinPill" aria-label="Coins"><span class="coinIcon" aria-hidden="true"></span><span id="coins">0</span></div></div></header><div class="rewardToast hidden" id="rewardToast"></div><div class="quickThread hidden" id="quickThread"></div><div class="anchor"><section class="chat" id="chat"><div class="log" id="chatLog"></div></section><button class="speech" id="speech" type="button">Pond restored. Tap me if you need the full interrogation.</button></div><div class="chatDock" id="chatDock"><button class="orb" id="orb" type="button" aria-label="Open Grimm"><span class="badge" id="badge"></span></button><form class="doneForm bottomComposer" id="doneForm"><input id="doneInput" placeholder="Say something to Grimm." autocomplete="off" maxlength="220"><button class="send">Send</button></form></div></section></div></div>
 <span id="fedCount" hidden>0</span><span id="foodCount" hidden>0</span>
 <script src="app.js"></script>
 </body>
 </html>
+
 
 
 
