@@ -198,7 +198,7 @@ class ViewportManager {
     const visibleHeight = vv ? vv.height : window.innerHeight;
     const offsetTop = vv ? vv.offsetTop : 0;
     const bottomGap = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
-    const keyboard = chatLayer?.inputFocused ? bottomGap : 0;
+    const keyboard = 0;
     const bottomInset = 0;
     this.root.style.setProperty("--app-height", Math.round(visibleHeight) + "px");
     this.root.style.setProperty("--visible-bottom-inset", Math.round(bottomInset) + "px");
