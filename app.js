@@ -1,4 +1,4 @@
-const KEY = "once.grimm.pond.v3";
+﻿const KEY = "once.grimm.pond.v3";
 const OLD_KEY = "once.grimm.pond.v2";
 const today = () => new Date().toISOString().slice(0, 10);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -99,6 +99,7 @@ goldKoiSprite.src = "assets/koi-gold-cartoon-swim-v1.png";
 let state = load();
 ensureAiDefaults();
 let view = "home";
+phone.classList.toggle("pondOnly", view === "pond");
 let pondLayer;
 let pageLayer;
 let chatLayer;
@@ -638,7 +639,7 @@ function renderWeek() {
     const iso = day.toISOString().slice(0, 10);
     const el = document.createElement("div");
     el.className = "day " + (state.dayCrosses.includes(iso) ? "done" : "");
-    el.innerHTML = '<span class="dot">×</span><span>' + labels[i] + '</span>';
+    el.innerHTML = '<span class="dot">Ã—</span><span>' + labels[i] + '</span>';
     weekEl.appendChild(el);
   }
 }
@@ -988,7 +989,7 @@ async function simonReply(text) {
 }
 
 function ensureQuestion(reply, text = "") {
-  if (/[?？]\s*$/.test(reply)) return reply;
+  if (/[?ï¼Ÿ]\s*$/.test(reply)) return reply;
   const prompts = [
     "What is the next tiny proof?",
     "What did that cost you?",
@@ -1233,17 +1234,22 @@ if (chatForm) {
   });
 }
 
+function syncView() {
+  const isPond = view === "pond";
+  phone.classList.toggle("pondOnly", isPond);
+  $("home").classList.toggle("hidden", isPond);
+  $("pondScreen").classList.toggle("hidden", !isPond);
+  $("switchBtn").textContent = isPond ? "Home" : "Pond";
+}
+
 $("switchBtn").addEventListener("click", () => {
-  view = "pond";
-  $("home").classList.add("hidden");
-  $("pondScreen").classList.remove("hidden");
-  $("switchBtn").textContent = "Pond";
+  view = view === "home" ? "pond" : "home";
+  syncView();
   chatLayer?.close();
 });
 
-phone.addEventListener("click", e => {
-  if (e.target.closest(".chatLayer button,.chatLayer input,.chat,.doneForm,.week,.panel")) return;
-  if (chatLayer?.state === "maximized" || chatLayer?.state === "keyboardOpen") return;
+pondLayerEl.addEventListener("click", e => {
+  if (view !== "pond" || chatLayer?.state !== "minimized") return;
   pondLayer?.feed(e.clientX, e.clientY);
 });
 
@@ -1278,8 +1284,8 @@ class ChatLayer {
   }
 
   setState(next) {
-    if (next === "keyboardOpen" && this.state !== "keyboardOpen") this.beforeKeyboardState = this.state;
-    if (this.state === "keyboardOpen" && next !== "keyboardOpen") next = this.beforeKeyboardState;
+    if (next === "keyboard" && this.state !== "keyboard") this.beforeKeyboardState = this.state;
+    if (this.state === "keyboard" && next !== "keyboard") next = this.beforeKeyboardState;
     this.state = next;
     this.sync();
   }
@@ -1299,20 +1305,16 @@ class ChatLayer {
   setKeyboardLift(lift) {
     this.keyboardLift = lift;
     this.el.style.setProperty("--keyboard-lift", lift + "px");
-    if (lift > 24) this.setState("keyboardOpen");
-    else if (this.state === "keyboardOpen") this.setState(this.beforeKeyboardState);
+    if (lift > 24) this.setState("keyboard");
+    else if (this.state === "keyboard") this.setState(this.beforeKeyboardState);
   }
 
   sync() {
-    const isKeyboard = this.state === "keyboardOpen";
+    const isKeyboard = this.state === "keyboard";
     const isMax = this.state === "maximized" || (isKeyboard && this.beforeKeyboardState === "maximized");
-    phone.classList.toggle("chatMode", isMax || isKeyboard);
-    phone.classList.toggle("keyboardOpen", isKeyboard);
-    phone.classList.toggle("chatState-minimized", this.state === "minimized");
-    phone.classList.toggle("chatState-maximized", this.state === "maximized");
-    phone.classList.toggle("chatState-keyboardOpen", isKeyboard);
-    phone.classList.toggle("chatWasMinimized", isKeyboard && this.beforeKeyboardState === "minimized");
-    phone.classList.toggle("chatWasMaximized", isKeyboard && this.beforeKeyboardState === "maximized");
+    phone.dataset.chatState = isKeyboard ? "keyboard" : this.state;
+    if (isKeyboard) phone.dataset.beforeChatState = this.beforeKeyboardState;
+    else delete phone.dataset.beforeChatState;
     pageLayer?.setHidden(isMax);
     chat.classList.toggle("open", isMax || isKeyboard);
     speech.classList.add("hidden");
@@ -1373,3 +1375,6 @@ updateBadge();
 render();
 promptForProof();
 requestAnimationFrame(loop);
+
+
+
