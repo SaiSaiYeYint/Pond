@@ -388,6 +388,63 @@
   .day.done .dot:before{font-size:38px!important}
 }
 </style>
+<style>
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden !important;
+  position: fixed;
+  inset: 0;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+.stage {
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.phone {
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  max-height: 100dvh !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+}
+
+.bottomComposer {
+  position: fixed !important;
+  left: 92px !important;
+  right: 18px !important;
+  bottom: calc(env(safe-area-inset-bottom) + 12px + var(--keyboard-lift, 0px)) !important;
+  z-index: 9999 !important;
+}
+
+.quickThread {
+  bottom: calc(env(safe-area-inset-bottom) + 78px + var(--keyboard-lift, 0px)) !important;
+}
+
+.anchor {
+  bottom: calc(env(safe-area-inset-bottom) + 12px + var(--keyboard-lift, 0px)) !important;
+}
+
+.screen {
+  padding-bottom: 96px !important;
+  overflow: hidden !important;
+}
+
+.list,
+.log {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+</style>
 </head>
 <body>
 <div class="stage"><div class="phone" id="phone"><div class="pond"><canvas id="pondCanvas"></canvas></div><div class="waterGlow"></div><header class="top"><button class="pill brandPill" id="switchBtn" type="button">Pond</button><div class="hudRight"><div class="pill coinPill" aria-label="Trophies"><span class="trophyIcon" aria-hidden="true"></span><span id="trophies">0</span></div><div class="pill coinPill" aria-label="Coins"><span class="coinIcon" aria-hidden="true"></span><span id="coins">0</span></div></div></header><div class="rewardToast hidden" id="rewardToast"></div><main class="screens"><section class="screen" id="home"><div class="heroCopy"><h1 id="greeting">Good evening.</h1></div><div class="week" id="week"></div><section class="panel"><div class="panelHead"><h2>Today's Done</h2></div><div class="list" id="doneList"></div></section></section><section class="screen hidden" id="pondScreen"></section></main><div class="quickThread hidden" id="quickThread"></div><form class="doneForm bottomComposer" id="doneForm"><input id="doneInput" placeholder="Say something to Grimm." autocomplete="off" maxlength="220"><button class="send">Send</button></form><div class="anchor"><section class="chat" id="chat"><div class="log" id="chatLog"></div></section><button class="speech" id="speech" type="button">Pond restored. Tap me if you need the full interrogation.</button><button class="orb" id="orb" type="button" aria-label="Open Grimm"><span class="badge" id="badge"></span></button></div></div></div>
