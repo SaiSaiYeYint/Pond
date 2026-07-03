@@ -20,7 +20,7 @@ const base = {
   feedback: [],
   notebook: [],
   codexTasks: [],
-  ai: { mode: "bridge", endpoint: "", model: "openai" },
+  ai: { mode: "local", endpoint: "", model: "local" },
   chat: [
     { role: "g", text: "I am Grimm. Log real proof, feed the pond, and do not try to impress me with vibes." }
   ],
@@ -104,6 +104,7 @@ let ripples = [];
 let glints = [];
 let causticSeed = Math.random() * 999;
 let pendingQuickUser = "";
+let grimmTypingInChat = false;
 const FOOD_TTL = 6500;
 const FOOD_FADE = 1400;
 const KOI_FRAME = 256;
@@ -111,8 +112,8 @@ const KOI_SWIM_FRAMES = [0, 1, 2, 3, 4, 3, 2, 1];
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function spriteForKind(kind) {
-  if (koiSpriteReady) return koiSprite;
   if (kind === "gold" && goldKoiSpriteReady) return goldKoiSprite;
+  if (kind === "kohaku" && koiSpriteReady) return koiSprite;
   return null;
 }
 
@@ -145,17 +146,11 @@ function save() {
   localStorage.setItem(KEY, JSON.stringify(state));
 }
 
-function defaultGrimmEndpoint() {
-  if (location.protocol === "file:") return "http://127.0.0.1:8787/grimm";
-  if (["127.0.0.1", "localhost"].includes(location.hostname)) return "http://127.0.0.1:8787/grimm";
-  return "/api/grimm";
-}
-
 function ensureAiDefaults() {
   state.ai ||= {};
-  if (!state.ai.endpoint || state.ai.endpoint === "local") state.ai.endpoint = defaultGrimmEndpoint();
-  state.ai.model ||= "openai";
-  state.ai.mode ||= "bridge";
+  state.ai.endpoint = "";
+  state.ai.model = "local";
+  state.ai.mode = "local";
 }
 
 function resize() {
@@ -172,7 +167,7 @@ function resize() {
 }
 
 function initPond() {
-  fish = Array.from({ length: 5 }, (_, i) => new Koi(i));
+  fish = Array.from({ length: 7 }, (_, i) => new Koi(i));
   glints = Array.from({ length: 34 }, () => ({
     x: Math.random() * w,
     y: Math.random() * h,
@@ -187,9 +182,9 @@ class Koi {
     this.x = Math.random() * (w + 360) - 180;
     this.y = Math.random() * (h + 360) - 180;
     this.a = Math.random() * Math.PI * 2;
-    this.baseSpeed = .18 + Math.random() * .13;
+    this.baseSpeed = .15 + Math.random() * .16;
     this.speed = this.baseSpeed;
-    this.size = 16 + Math.random() * 6;
+    this.size = 14 + Math.random() * 8;
     this.phase = Math.random() * Math.PI * 2;
     this.turnEase = .006 + Math.random() * .006;
     this.curve = 0;
@@ -198,14 +193,15 @@ class Koi {
     this.interest = .42 + Math.random() * .45;
     this.tx = Math.random() * (w + 520) - 260;
     this.ty = Math.random() * (h + 520) - 260;
-    this.kind = "kohaku";
-    this.palette = [
-      { body: "#f0eadb", patch: "#c95a38", fin: "#decbb0", eye: "#26322d" },
-      { body: "#e0d49f", patch: "#b58e3e", fin: "#e3d5ad", eye: "#26322d" },
-      { body: "#283b34", patch: "#cf7445", fin: "#9ea99e", eye: "#111614" },
-      { body: "#e9e8d7", patch: "#38453f", fin: "#cfd1c0", eye: "#111614" },
-      { body: "#d97846", patch: "#ead4b7", fin: "#dca98b", eye: "#111614" }
-    ][i % 5];
+    this.kind = ["kohaku", "gold", "ink", "kohaku", "orange", "cream", "gold"][i % 7];
+    if (this.kind === "gold") this.size *= .68;
+    this.palette = {
+      kohaku: { body: "#f0eadb", patch: "#c95a38", fin: "#decbb0", eye: "#26322d" },
+      gold: { body: "#d6c17a", patch: "#fff0bb", fin: "#ead9a8", eye: "#1b2320" },
+      ink: { body: "#283b34", patch: "#cf7445", fin: "#9ea99e", eye: "#111614" },
+      orange: { body: "#d97846", patch: "#ead4b7", fin: "#dca98b", eye: "#111614" },
+      cream: { body: "#f3ead7", patch: "#e0a83a", fin: "#f0d8b4", eye: "#1b2320" }
+    }[this.kind];
   }
 
   update() {
@@ -677,6 +673,7 @@ function renderChat() {
       chatLog.appendChild(decisionButtons());
     }
   });
+  if (grimmTypingInChat) chatLog.appendChild(quickBubble("g", "", true));
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
@@ -716,7 +713,7 @@ function resolveDecision(accepted) {
 function quickBubble(role, text, typing = false) {
   const b = document.createElement("div");
   b.className = "quickBubble " + role + (typing ? " typing" : "");
-  b.textContent = typing ? "..." : text;
+  b.textContent = typing ? "" : text;
   if (!typing) b.title = text;
   return b;
 }
@@ -726,8 +723,9 @@ function showQuickThread({ userText = "", grimmText = "", typing = false, hold =
   quickThread.classList.remove("leaving");
   quickThread.replaceChildren();
   if (userText) quickThread.appendChild(quickBubble("u", userText));
+  for (const line of grimmSegments(grimmText)) quickThread.appendChild(quickBubble("g", line));
   if (typing) quickThread.appendChild(quickBubble("g", "", true));
-  else if (grimmText) quickThread.appendChild(quickBubble("g", grimmText));
+  while (quickThread.children.length > 3) quickThread.firstElementChild.remove();
   if (!quickThread.children.length) return;
   quickThread.classList.remove("hidden");
   clearTimeout(showQuickThread.timer);
@@ -748,10 +746,11 @@ function latestGrimm() {
 }
 
 function say(text, renderNow = true) {
-  const message = { role: "g", text, at: new Date().toISOString() };
-  state.chat.push(message);
+  const parts = grimmSegments(text);
+  const messages = parts.map(part => ({ role: "g", text: part, at: new Date().toISOString() + "-" + Math.random().toString(36).slice(2, 6) }));
+  state.chat.push(...messages);
   if (state.pendingDecision?.attachToNextReply) {
-    state.pendingDecision.messageAt = message.at;
+    state.pendingDecision.messageAt = messages[messages.length - 1]?.at;
     delete state.pendingDecision.attachToNextReply;
   }
   speech.textContent = text;
@@ -777,6 +776,71 @@ function say(text, renderNow = true) {
   if (renderNow) render();
 }
 
+async function saySequential(text, renderNow = true) {
+  const parts = grimmSegments(text);
+  if (!parts.length) return;
+  const quickUser = pendingQuickUser;
+  pendingQuickUser = "";
+  const delivered = [];
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    const message = { role: "g", text: part, at: new Date().toISOString() + "-" + Math.random().toString(36).slice(2, 6) };
+    state.chat.push(message);
+    delivered.push(part);
+    if (i === parts.length - 1 && state.pendingDecision?.attachToNextReply) {
+      state.pendingDecision.messageAt = message.at;
+      delete state.pendingDecision.attachToNextReply;
+    }
+    speech.textContent = part;
+    showQuickThread({ userText: quickUser, grimmText: delivered.join("\n"), hold: 30000 });
+    orb.classList.add("talk");
+    clearTimeout(say.timer);
+    clearTimeout(say.hideTimer);
+    say.timer = setTimeout(() => orb.classList.remove("talk"), 700);
+    if (!chat.classList.contains("open")) {
+      state.unread = true;
+      speech.classList.add("hidden");
+      updateBadge();
+    } else {
+      state.unread = false;
+      updateBadge();
+      renderChat();
+    }
+    if (i < parts.length - 1) {
+      await wait(Math.min(1050, 520 + part.length * 16));
+      grimmTypingInChat = true;
+      showQuickThread({ userText: quickUser, grimmText: delivered.join("\n"), typing: true, hold: 30000 });
+      if (chat.classList.contains("open")) renderChat();
+      await wait(620 + Math.min(700, parts[i + 1].length * 12));
+      grimmTypingInChat = false;
+      if (chat.classList.contains("open")) renderChat();
+    }
+  }
+
+  say.hideTimer = setTimeout(() => {
+    speech.classList.add("hidden");
+    updateBadge();
+  }, 9200);
+  if (renderNow) render();
+}
+
+function grimmSegments(text) {
+  const raw = String(text || "").trim();
+  const clean = raw.replace(/[ \t]+/g, " ").trim();
+  if (!clean) return [];
+  if (raw.includes("\n")) return raw.split(/\n+/).map(s => s.replace(/[ \t]+/g, " ").trim()).filter(Boolean).slice(0, 3);
+  const questionIndex = clean.search(/(?:What|Why|How|Can|Should|Did|Do|Want|Which|When|Where)\b/i);
+  if (questionIndex > 8 && questionIndex < clean.length - 8) {
+    const first = clean.slice(0, questionIndex).trim();
+    const second = clean.slice(questionIndex).trim();
+    return [first, second].filter(Boolean).slice(0, 3);
+  }
+  const sentenceParts = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(s => s.trim()).filter(Boolean) || [clean];
+  if (sentenceParts.length >= 3) return [sentenceParts[0], sentenceParts.slice(1, -1).join(" "), sentenceParts.at(-1)].filter(Boolean).slice(0, 3);
+  return sentenceParts.slice(0, 3);
+}
+
 async function answerWithGrimm(text, replyFactory) {
   showTypingFor(text);
   const started = performance.now();
@@ -784,7 +848,7 @@ async function answerWithGrimm(text, replyFactory) {
   const minDelay = 900 + Math.min(1200, reply.length * 18);
   const remaining = minDelay - (performance.now() - started);
   if (remaining > 0) await wait(remaining);
-  say(reply, false);
+  await saySequential(reply, false);
 }
 
 function user(text) {
@@ -869,41 +933,7 @@ function applyAiStructured(ai, sourceText = "") {
   }
 }
 
-async function callGrimmAI(task, input) {
-  if (!state.ai?.endpoint) return null;
-  const response = await fetch(state.ai.endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      task,
-      input,
-      model: state.ai.model,
-      system: GRIMM_SYSTEM,
-      caseStudy: buildCaseStudy(),
-      responseContract: task === "judge"
-        ? { valid: "boolean", score: "number -24 to 44", grimm: "short string", theory: "optional hidden case note" }
-        : { reply: "short string", theory: "optional hidden case note" }
-    })
-  });
-  if (!response.ok) throw new Error("AI endpoint failed");
-  return response.json();
-}
-
 async function judgeActivity(text) {
-  try {
-    const ai = await callGrimmAI("judge", { text });
-    if (ai && typeof ai.valid === "boolean") {
-      applyAiStructured(ai, text);
-      return {
-        valid: ai.valid,
-        score: clamp(Number(ai.score || 0), -24, 44),
-        grimm: String(ai.grimm || "Logged."),
-        theory: ai.theory ? String(ai.theory) : ""
-      };
-    }
-  } catch (err) {
-    state.caseFile.evidence.push({ type: "ai-error", statement: err.message, at: new Date().toISOString() });
-  }
   return localJudge(text);
 }
 
@@ -942,31 +972,10 @@ function localJudge(text) {
 
 async function grimmReply(text) {
   if (isLocalCommand(text)) return localReply(text);
-  try {
-    const ai = await callGrimmAI("chat", { text, recentChat: state.chat.slice(-12) });
-    applyAiStructured(ai, text);
-    if (ai?.reply) return ensureQuestion(String(ai.reply), text);
-  } catch (err) {
-    state.caseFile.evidence.push({ type: "ai-error", statement: err.message, at: new Date().toISOString() });
-  }
   return localReply(text);
 }
 
 async function simonReply(text) {
-  try {
-    const ai = await callGrimmAI("chat", {
-      text,
-      recentChat: state.chat.slice(-12),
-      ownerCommand: true,
-      workTime: state.workTime
-    });
-    applyAiStructured(ai, text);
-    if (ai?.reply) {
-      return String(ai.reply) + (ai.codexTask ? " Codex task: " + ai.codexTask : "");
-    }
-  } catch (err) {
-    state.caseFile.evidence.push({ type: "ai-error", statement: err.message, at: new Date().toISOString() });
-  }
   const admin = handleSimonCommand(text);
   return admin.reply + (admin.codexTask ? " Codex task: " + admin.codexTask : "");
 }
@@ -986,22 +995,22 @@ function ensureQuestion(reply, text = "") {
 
 function talkativeJudgeReply(j) {
   const score = (j.score > 0 ? "+" : "") + j.score;
-  if (j.score < 0) return ensureQuestion(j.grimm + " " + score + " coins.", "bad");
-  if (j.score === 0) return ensureQuestion(j.grimm + " No coins.", "zero");
-  return ensureQuestion(j.grimm + " " + score + " coins.", "good");
+  if (j.score < 0) return j.grimm + "\n" + score + " coins.\n" + ensureQuestion("What is the next honest proof?", "bad");
+  if (j.score === 0) return j.grimm + "\nNo coins.\n" + ensureQuestion("Can you make the next one sharper?", "zero");
+  return j.grimm + "\n" + score + " coins.\n" + ensureQuestion("What is the next tiny proof?", "good");
 }
 
 function goalSetReply(goal) {
-  return "Goal locked: " + goal.text + ". Bring proof and I will hand over a trophy. What is the first move?";
+  return "Goal locked: " + goal.text + ".\nBring proof and I will hand over a trophy.\nWhat is the first move?";
 }
 
 function judgedGoalReply(j, goalReached) {
   if (goalReached) {
-    return j.grimm + " " + (j.score > 0 ? "+" : "") + j.score + " coins. Goal reached. Trophy earned. What goal is next?";
+    return j.grimm + "\n" + (j.score > 0 ? "+" : "") + j.score + " coins. Goal reached.\nTrophy earned. What goal is next?";
   }
   const goal = todayGoal();
   if (goal && !goal.achieved) {
-    return ensureQuestion(j.grimm + " " + (j.score > 0 ? "+" : "") + j.score + " coins. Not the goal yet.", goal.text);
+    return j.grimm + "\n" + (j.score > 0 ? "+" : "") + j.score + " coins.\n" + ensureQuestion("Not the goal yet.", goal.text);
   }
   return talkativeJudgeReply(j);
 }
@@ -1075,35 +1084,26 @@ function saveFeedback(text) {
 
 function isLocalCommand(text) {
   const l = text.toLowerCase();
-  return l.startsWith("api endpoint:") || l === "api status" || l === "api off" || l === "case report" || l === "case file" || l === "case reset";
+  return l === "case report" || l === "case file" || l === "case reset";
 }
 
 function isConversationText(text) {
   const l = text.toLowerCase().trim();
-  return l.endsWith("?") || ["hi", "hello", "hey", "yo", "grimm"].includes(l) || l.startsWith("grimm ") || l.startsWith("can you ") || l.startsWith("what ") || l.startsWith("why ") || l.startsWith("how ");
+  return l.endsWith("?") || ["hi", "hello", "hey", "yo", "sup", "wassup", "grimm", "good morning", "good afternoon", "good evening"].includes(l) || l.startsWith("hello ") || l.startsWith("hi ") || l.startsWith("hey ") || l.startsWith("grimm ") || l.startsWith("can you ") || l.startsWith("what ") || l.startsWith("why ") || l.startsWith("how ");
 }
 
 async function localReply(text) {
   const l = text.toLowerCase();
-  if (l.startsWith("api endpoint:")) {
-    state.ai.endpoint = text.slice(13).trim();
-    state.ai.mode = state.ai.endpoint ? "bridge" : "local";
-    if (!state.ai.endpoint) return "Endpoint empty. Back to my pocket brain.";
-    const health = await checkApiHealth();
-    return health.ok
-      ? "Endpoint stored. Bridge is alive. AI key: " + (health.hasApiKey ? "yes." : "missing, mock brain active.")
-      : "Endpoint stored, but the bridge did not answer yet.";
-  }
-  if (l === "api off") {
-    state.ai.endpoint = "";
-    state.ai.mode = "local";
-    return "AI bridge cut. Local Grimm remains judgmental.";
-  }
-  if (l === "api status") {
-    if (!state.ai.endpoint) return "No endpoint yet. I am running locally.";
-    const health = await checkApiHealth();
-    if (!health.ok) return "Endpoint saved, bridge silent. Start the server.";
-    return "Bridge alive. AI key: " + (health.hasApiKey ? "yes. Let us cause judgment." : "missing. Mock Grimm is covering the pond.");
+  if (/\b(hi|hello|hey|yo|good morning|good afternoon|good evening|sup|wassup)\b/i.test(text)) {
+    const lines = [
+      "Hello. I was watching the pond pretend it has secrets. What did you do today?",
+      "You found me. Tragic for both of us. What proof are you bringing?",
+      "Mm. Hello. I am awake enough to judge one useful thing.",
+      "Good, you are here. Name one thing worth logging before your motivation evaporates.",
+      "Hi. I have been under the pond, developing opinions. What happened today?"
+    ];
+    const pick = Math.abs([...text].reduce((n, ch) => n + ch.charCodeAt(0), 0)) % lines.length;
+    return lines[pick];
   }
   if (l === "case report" || l === "case file") return caseReport();
   if (l === "case reset") {
@@ -1126,19 +1126,6 @@ async function localReply(text) {
     return "Promise logged. Dangerous little sentence. When will it become evidence?";
   }
   return "Noted. Now bring me proof. What did you actually do?";
-}
-
-async function checkApiHealth() {
-  try {
-    const url = new URL(state.ai.endpoint, location.origin);
-    url.pathname = url.pathname.startsWith("/api/") ? "/api/health" : "/health";
-    url.search = "";
-    const response = await fetch(url.toString(), { method: "GET" });
-    if (!response.ok) return { ok: false };
-    return { ok: true, ...(await response.json()) };
-  } catch {
-    return { ok: false };
-  }
 }
 
 function caseReport() {

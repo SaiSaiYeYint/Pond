@@ -25,9 +25,372 @@
 <style>
 .phone.chatMode .orb{left:-19px!important;bottom:calc(-66px - var(--keyboard-lift,0px))!important}@media(max-width:480px){.phone.chatMode .orb{left:-19px!important;bottom:calc(-66px - var(--keyboard-lift,0px))!important}}
 </style>
+<style>
+.top:after{content:"";position:absolute;left:0;right:0;top:0;height:86px;z-index:-1;background:linear-gradient(180deg,rgba(3,7,6,.42),rgba(3,7,6,.18) 58%,transparent);pointer-events:none}.pill{background:rgba(3,10,9,.56)!important;border-color:rgba(255,255,255,.1)!important;box-shadow:0 14px 34px rgba(0,0,0,.22),inset 0 0 0 1px rgba(255,255,255,.03)!important}.quickThread{left:96px!important;right:24px!important;width:auto!important;transform:none!important;bottom:calc(84px + var(--keyboard-lift,0px))!important;gap:8px!important}.quickBubble{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;max-width:86%!important;width:auto!important}.quickBubble.g{max-width:88%!important}.quickBubble.u{max-width:72%!important}.quickBubble.typing{width:64px!important;min-height:34px!important;margin-left:10px!important;transform:translateY(-4px)!important}.quickBubble.typing:before{left:15px!important}.quickThread.leaving .quickBubble.u{animation:bubbleOutSmooth 1.15s ease forwards!important}.quickThread.leaving .quickBubble.g{animation:bubbleOutSmooth 1.15s ease .42s forwards!important}@keyframes bubbleOutSmooth{to{opacity:0;transform:translateY(-14px) scale(.985);filter:blur(1px)}}.phone.chatMode .anchor{top:74px!important;bottom:calc(84px + var(--keyboard-lift,0px))!important}.phone.chatMode .chat{animation:chatOpenSmooth .34s cubic-bezier(.16,1,.3,1)!important;transform-origin:bottom left!important}.phone.chatMode .log{scroll-behavior:smooth!important}.phone.chatMode .bubble{animation:chatBubbleOpen .28s cubic-bezier(.16,1,.3,1) both!important;max-width:78%!important}.phone.chatMode .bubble.g{max-width:80%!important}.phone.chatMode .bubble.u{max-width:68%!important}.phone.chatMode .top:after{height:96px;background:linear-gradient(180deg,rgba(3,7,6,.56),rgba(3,7,6,.24) 62%,transparent)}@keyframes chatOpenSmooth{0%{opacity:0;transform:translateY(28px) scale(.94);filter:blur(3px)}60%{opacity:1;filter:blur(0)}100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}@keyframes chatBubbleOpen{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}@media(max-width:480px){.quickThread{left:92px!important;right:18px!important;bottom:calc(78px + var(--keyboard-lift,0px))!important}.quickBubble.g{max-width:88%!important}.quickBubble.u{max-width:72%!important}.phone.chatMode .anchor{top:70px!important}.phone.chatMode .bubble.g{max-width:80%!important}.phone.chatMode .bubble.u{max-width:68%!important}}
+</style>
+<style>
+.quickBubble.typing{color:transparent!important;font-size:0!important;line-height:0!important}.quickBubble.typing:before{display:block!important}
+</style>
+<style>
+.phone.chatMode .anchor{left:96px!important;right:24px!important;width:auto!important;transform:none!important}.phone.chatMode .chat{width:100%!important}.phone.chatMode .bubble{max-width:86%!important}.phone.chatMode .bubble.g{max-width:88%!important}.phone.chatMode .bubble.u{max-width:72%!important}.phone.chatMode .orb{left:-78px!important;bottom:calc(-66px - var(--keyboard-lift,0px))!important}@media(max-width:480px){.phone.chatMode .anchor{left:92px!important;right:18px!important;width:auto!important;transform:none!important}.phone.chatMode .orb{left:-78px!important;bottom:calc(-66px - var(--keyboard-lift,0px))!important}}
+</style>
+<style>
+.phone:after{content:"";position:absolute;left:0;right:0;top:0;height:104px;z-index:4;background:linear-gradient(180deg,rgba(3,7,6,.52),rgba(3,7,6,.26) 48%,rgba(3,7,6,.08) 76%,transparent);pointer-events:none}.top{z-index:82!important}.quickThread{left:50%!important;right:auto!important;width:min(356px,calc(100% - 44px))!important;transform:translateX(-50%)!important}.phone.chatMode .anchor{left:50%!important;right:auto!important;width:min(356px,calc(100% - 44px))!important;transform:translateX(-50%)!important}.phone.chatMode .chat{width:100%!important}.phone.chatMode .orb{left:-19px!important;bottom:calc(-66px - var(--keyboard-lift,0px))!important}.phone.chatMode .bubble,.quickBubble{animation-duration:.34s!important}.phone.chatMode .bubble.g,.quickBubble.g{max-width:80%!important}.phone.chatMode .bubble.u,.quickBubble.u{max-width:68%!important}@media(max-width:480px){.quickThread{width:min(344px,calc(100% - 34px))!important}.phone.chatMode .anchor{width:min(344px,calc(100% - 34px))!important}.phone.chatMode .orb{left:-19px!important;bottom:calc(-66px - var(--keyboard-lift,0px))!important}}
+</style>
+<style>
+.phone:after{height:132px!important;z-index:81!important;background:linear-gradient(180deg,rgba(3,7,6,.76),rgba(3,7,6,.42) 38%,rgba(3,7,6,.16) 72%,transparent)!important}.phone.chatMode .anchor{top:86px!important;overflow:hidden!important;clip-path:inset(0 round 0)!important}.phone.chatMode .chat{animation:chatBloom .52s cubic-bezier(.2,.9,.16,1) both!important;will-change:transform,opacity,filter!important}.phone.chatMode .log{overflow-y:auto!important;overflow-x:hidden!important;scrollbar-width:none!important;padding-top:18px!important;mask-image:linear-gradient(to bottom,transparent 0,#000 28px,#000 calc(100% - 4px))!important;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 28px,#000 calc(100% - 4px))!important}.phone.chatMode .log::-webkit-scrollbar{display:none!important;width:0!important}.phone.chatMode .bubble{animation:chatBubbleBloom .42s cubic-bezier(.2,.9,.16,1) both!important}.phone.chatMode .bubble:nth-child(2n){animation-delay:.025s!important}.phone.chatMode .bubble:nth-child(3n){animation-delay:.05s!important}@keyframes chatBloom{0%{opacity:0;transform:translateY(42px) scale(.88);filter:blur(8px)}45%{opacity:1;transform:translateY(-3px) scale(1.012);filter:blur(0)}100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}@keyframes chatBubbleBloom{0%{opacity:0;transform:translateY(24px) scale(.92)}70%{opacity:1;transform:translateY(-2px) scale(1.01)}100%{opacity:1;transform:translateY(0) scale(1)}}@media(max-width:480px){.phone:after{height:124px!important}.phone.chatMode .anchor{top:80px!important}.phone.chatMode .log{padding-top:16px!important}}
+</style>
+<style>
+.anchor{z-index:90!important}.orb{z-index:95!important;display:grid!important;opacity:1!important;visibility:visible!important}.phone.chatMode .anchor{overflow:visible!important}.phone.chatMode .orb{z-index:96!important;display:grid!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important;left:-78px!important;bottom:calc(-66px - var(--keyboard-lift,0px))!important}.phone.chatMode .bottomComposer{z-index:88!important}.quickThread{z-index:87!important}@media(max-width:480px){.phone.chatMode .orb{left:-78px!important;bottom:calc(-66px - var(--keyboard-lift,0px))!important}}
+</style>
+<style>
+.phone.chatMode .orb{left:-19px!important;bottom:calc(-66px - var(--keyboard-lift,0px))!important}@media(max-width:480px){.phone.chatMode .orb{left:-19px!important;bottom:calc(-66px - var(--keyboard-lift,0px))!important}}
+</style>
+<style>
+.phone.chatMode .anchor{overflow:visible!important;clip-path:none!important;z-index:110!important}.phone.chatMode .orb{position:absolute!important;left:-19px!important;bottom:calc(-66px - var(--keyboard-lift,0px))!important;z-index:130!important;display:grid!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:none!important}@media(max-width:480px){.phone.chatMode .anchor{overflow:visible!important;clip-path:none!important}.phone.chatMode .orb{left:-19px!important;bottom:calc(-66px - var(--keyboard-lift,0px))!important}}
+</style>
+<style>
+.week{
+  display:flex!important;
+  align-items:center!important;
+  gap:0!important;
+  border:1px solid rgba(255,255,255,.09)!important;
+  border-radius:24px!important;
+  padding:10px 12px!important;
+  background:rgba(3,8,8,.72)!important;
+  box-shadow:0 18px 48px rgba(0,0,0,.24),inset 0 0 0 1px rgba(255,255,255,.03)!important;
+  backdrop-filter:blur(18px)!important;
+}
+.day{
+  position:relative!important;
+  flex:1 1 0!important;
+  min-width:0!important;
+  display:grid!important;
+  justify-items:center!important;
+  gap:5px!important;
+  color:rgba(247,251,248,.48)!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  letter-spacing:0!important;
+}
+.day:not(:last-child):after{
+  content:""!important;
+  position:absolute!important;
+  top:12px!important;
+  left:calc(50% + 15px)!important;
+  width:calc(100% - 30px)!important;
+  height:2px!important;
+  border-radius:999px!important;
+  background:rgba(255,255,255,.14)!important;
+}
+.day.done:not(:last-child):after{
+  background:rgba(255,81,69,.64)!important;
+  box-shadow:0 0 14px rgba(255,81,69,.26)!important;
+}
+.dot{
+  width:26px!important;
+  height:26px!important;
+  border-radius:50%!important;
+  display:grid!important;
+  place-items:center!important;
+  background:rgba(255,255,255,.06)!important;
+  border:1px solid rgba(255,255,255,.13)!important;
+  color:transparent!important;
+  font-size:0!important;
+  line-height:1!important;
+  transform:none!important;
+}
+.day.done .dot{
+  background:rgba(255,81,69,.12)!important;
+  border-color:rgba(255,81,69,.8)!important;
+  box-shadow:inset 0 0 0 1px rgba(255,81,69,.22),0 0 20px rgba(255,81,69,.18)!important;
+}
+.day.done .dot:before{
+  content:"×"!important;
+  color:#ff5145!important;
+  font-size:30px!important;
+  font-weight:1000!important;
+  line-height:.72!important;
+  transform:rotate(-10deg) translateY(-1px)!important;
+  text-shadow:0 0 14px rgba(255,81,69,.34)!important;
+}
+.day span:last-child{max-width:100%;overflow:hidden;text-overflow:clip!important}
+.panel{
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+.panelHead{padding:0 2px 8px!important}
+.panelHead h2{
+  margin:0!important;
+  font-size:12px!important;
+  font-weight:900!important;
+  color:rgba(247,251,248,.68)!important;
+  text-transform:uppercase!important;
+  letter-spacing:.5px!important;
+}
+.list{
+  height:178px!important;
+  max-height:178px!important;
+  padding:0 1px 3px!important;
+  gap:7px!important;
+  overflow:auto!important;
+  align-content:start!important;
+  scrollbar-width:none!important;
+  mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 18px),transparent 100%)!important;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 18px),transparent 100%)!important;
+}
+.doneCard{
+  grid-template-columns:minmax(0,1fr) auto!important;
+  min-height:40px!important;
+  border-radius:18px 18px 18px 7px!important;
+  background:rgba(3,8,8,.88)!important;
+  border:1px solid rgba(255,255,255,.1)!important;
+  padding:9px 10px 9px 12px!important;
+  box-shadow:0 14px 36px rgba(0,0,0,.22)!important;
+}
+.doneLine{
+  font-size:12px!important;
+  font-weight:790!important;
+  line-height:1.28!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  color:#f4fbf8!important;
+}
+.bonus{
+  min-width:44px!important;
+  height:25px!important;
+  padding:0 9px!important;
+  border-radius:999px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:rgba(255,253,245,.96)!important;
+  color:#151713!important;
+  font-size:12px!important;
+  font-weight:1000!important;
+  text-shadow:none!important;
+  box-shadow:0 8px 20px rgba(0,0,0,.18)!important;
+}
+.bonus.bad{
+  background:rgba(255,81,69,.13)!important;
+  border:1px solid rgba(255,81,69,.42)!important;
+  color:#ff6c60!important;
+}
+.bonus.zero{
+  background:rgba(255,255,255,.08)!important;
+  border:1px solid rgba(255,255,255,.1)!important;
+  color:rgba(247,251,248,.62)!important;
+}
+.empty{
+  border:1px solid rgba(255,255,255,.1)!important;
+  border-radius:18px 18px 18px 7px!important;
+  background:rgba(3,8,8,.78)!important;
+  color:rgba(247,251,248,.72)!important;
+  padding:12px 13px!important;
+  font-size:12px!important;
+  font-weight:760!important;
+  box-shadow:0 14px 36px rgba(0,0,0,.2)!important;
+}
+.quickBubble.typing{
+  width:50px!important;
+  min-width:50px!important;
+  min-height:34px!important;
+  padding:0!important;
+}
+.phone.chatMode .bubble.typing{width:50px!important;min-width:50px!important}
+@media(max-width:480px){
+  .week{padding:9px 10px!important}
+  .dot{width:24px!important;height:24px!important}
+  .day.done .dot:before{font-size:28px!important}
+  .list{height:166px!important;max-height:166px!important}
+}
+</style>
+<style>
+.week{
+  background:rgba(5,18,17,.42)!important;
+  border-color:rgba(255,255,255,.13)!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.06)!important;
+}
+.panel{
+  border:1px solid rgba(255,255,255,.12)!important;
+  border-radius:22px!important;
+  background:rgba(5,18,17,.34)!important;
+  box-shadow:0 16px 38px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.05)!important;
+  backdrop-filter:blur(16px)!important;
+  overflow:hidden!important;
+}
+.panelHead{
+  padding:12px 13px 7px!important;
+  background:linear-gradient(180deg,rgba(3,8,8,.34),transparent)!important;
+}
+.panelHead h2{
+  color:rgba(247,251,248,.94)!important;
+  font-size:13px!important;
+  font-weight:900!important;
+  text-transform:none!important;
+  letter-spacing:0!important;
+  text-shadow:0 2px 14px rgba(0,0,0,.42)!important;
+}
+.list{
+  height:188px!important;
+  max-height:188px!important;
+  padding:0 10px 12px!important;
+  gap:6px!important;
+  mask-image:none!important;
+  -webkit-mask-image:none!important;
+}
+.doneCard{
+  min-height:34px!important;
+  border-radius:14px!important;
+  background:rgba(255,255,255,.075)!important;
+  border:1px solid rgba(255,255,255,.095)!important;
+  padding:7px 8px 7px 10px!important;
+  box-shadow:none!important;
+}
+.doneLine{
+  color:rgba(247,251,248,.92)!important;
+  font-size:12px!important;
+  font-weight:720!important;
+}
+.bonus{
+  min-width:36px!important;
+  height:23px!important;
+  padding:0 7px!important;
+  background:transparent!important;
+  color:#f2c14e!important;
+  box-shadow:none!important;
+  font-size:12px!important;
+}
+.bonus.bad{background:transparent!important;border:0!important;color:#ff6c60!important}
+.bonus.zero{background:transparent!important;border:0!important;color:rgba(247,251,248,.58)!important}
+.empty{
+  background:rgba(255,255,255,.065)!important;
+  border:1px solid rgba(255,255,255,.1)!important;
+  border-radius:14px!important;
+  box-shadow:none!important;
+  color:rgba(247,251,248,.78)!important;
+}
+.day.done .dot:before{content:"\00d7"!important}
+@media(max-width:480px){.list{height:178px!important;max-height:178px!important}}
+</style>
+<style>
+.panel{
+  border-radius:26px!important;
+  background:rgba(5,22,20,.46)!important;
+  border:1px solid rgba(255,255,255,.13)!important;
+  box-shadow:0 22px 54px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.07)!important;
+}
+.panelHead{padding:15px 16px 11px!important}
+.panelHead h2{
+  font-size:18px!important;
+  color:#f7fbf8!important;
+  text-shadow:0 2px 16px rgba(0,0,0,.42)!important;
+}
+.list{
+  height:215px!important;
+  max-height:215px!important;
+  padding:0 14px 14px!important;
+  gap:0!important;
+}
+.doneCard{
+  min-height:56px!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  gap:12px!important;
+  align-items:center!important;
+  border-radius:0!important;
+  background:rgba(255,255,255,.025)!important;
+  border:0!important;
+  border-top:1px solid rgba(255,255,255,.08)!important;
+  padding:9px 4px!important;
+}
+.doneCard:first-child{border-top:0!important}
+.doneLine{
+  display:inline-block!important;
+  max-width:100%!important;
+  width:max-content!important;
+  padding:9px 16px!important;
+  border-radius:999px!important;
+  background:rgba(3,8,8,.78)!important;
+  color:#fffdf5!important;
+  font-size:15px!important;
+  font-weight:900!important;
+  line-height:1.15!important;
+  text-shadow:0 2px 12px rgba(0,0,0,.42)!important;
+}
+.bonus{
+  min-width:58px!important;
+  height:36px!important;
+  padding:0 14px!important;
+  border-radius:999px!important;
+  background:rgba(255,253,245,.96)!important;
+  color:#e49a05!important;
+  font-size:17px!important;
+  font-weight:1000!important;
+}
+.bonus.bad{
+  background:rgba(255,253,245,.96)!important;
+  color:#ff5145!important;
+}
+.bonus.zero{
+  background:rgba(255,253,245,.72)!important;
+  color:rgba(21,23,19,.55)!important;
+}
+@media(max-width:480px){
+  .panelHead h2{font-size:17px!important}
+  .list{height:196px!important;max-height:196px!important;padding:0 12px 12px!important}
+  .doneCard{min-height:52px!important}
+  .doneLine{font-size:14px!important;padding:8px 14px!important}
+  .bonus{min-width:54px!important;height:34px!important;font-size:16px!important}
+}
+</style>
+<style>
+.week{
+  min-height:86px!important;
+  padding:14px 18px!important;
+  border-radius:28px!important;
+  background:rgba(5,22,20,.48)!important;
+  border-color:rgba(255,255,255,.14)!important;
+  box-shadow:0 22px 54px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.07)!important;
+}
+.day{
+  gap:8px!important;
+  font-size:12px!important;
+  font-weight:900!important;
+}
+.day:not(:last-child):after{
+  top:18px!important;
+  left:calc(50% + 19px)!important;
+  width:calc(100% - 38px)!important;
+  height:3px!important;
+}
+.dot{
+  width:38px!important;
+  height:38px!important;
+  border-width:1px!important;
+  background:rgba(255,255,255,.065)!important;
+}
+.day.done .dot{
+  background:rgba(255,81,69,.14)!important;
+  border-color:rgba(255,81,69,.9)!important;
+  box-shadow:0 0 22px rgba(255,81,69,.2),inset 0 0 0 1px rgba(255,81,69,.26)!important;
+}
+.day.done .dot:before{
+  font-size:42px!important;
+  line-height:.7!important;
+}
+@media(max-width:480px){
+  .week{min-height:80px!important;padding:13px 13px!important}
+  .day{font-size:11px!important;gap:7px!important}
+  .dot{width:34px!important;height:34px!important}
+  .day:not(:last-child):after{top:16px!important;left:calc(50% + 17px)!important;width:calc(100% - 34px)!important}
+  .day.done .dot:before{font-size:38px!important}
+}
+</style>
 </head>
 <body>
-<div class="stage"><div class="phone" id="phone"><div class="pond"><canvas id="pondCanvas"></canvas></div><div class="waterGlow"></div><header class="top"><button class="pill brandPill" id="switchBtn" type="button">Pond</button><div class="hudRight"><div class="pill coinPill" aria-label="Trophies"><span class="trophyIcon" aria-hidden="true"></span><span id="trophies">0</span></div><div class="pill coinPill" aria-label="Coins"><span class="coinIcon" aria-hidden="true"></span><span id="coins">0</span></div></div></header><div class="rewardToast hidden" id="rewardToast"></div><main class="screens"><section class="screen" id="home"><div class="heroCopy"><h1 id="greeting">Good evening.</h1></div><div class="week" id="week"></div><section class="panel"><div class="panelHead"><h2>Today's Done</h2></div><div class="list" id="doneList"></div></section></section><section class="screen hidden" id="pondScreen"></section></main><div class="quickThread hidden" id="quickThread"></div><form class="doneForm bottomComposer" id="doneForm"><input id="doneInput" placeholder="Tell Grimm what you did. Or argue." autocomplete="off" maxlength="220"><button class="send">Send</button></form><div class="anchor"><section class="chat" id="chat"><div class="log" id="chatLog"></div></section><button class="speech" id="speech" type="button">Pond restored. Tap me if you need the full interrogation.</button><button class="orb" id="orb" type="button" aria-label="Open Grimm"><span class="badge" id="badge"></span></button></div></div></div>
+<div class="stage"><div class="phone" id="phone"><div class="pond"><canvas id="pondCanvas"></canvas></div><div class="waterGlow"></div><header class="top"><button class="pill brandPill" id="switchBtn" type="button">Pond</button><div class="hudRight"><div class="pill coinPill" aria-label="Trophies"><span class="trophyIcon" aria-hidden="true"></span><span id="trophies">0</span></div><div class="pill coinPill" aria-label="Coins"><span class="coinIcon" aria-hidden="true"></span><span id="coins">0</span></div></div></header><div class="rewardToast hidden" id="rewardToast"></div><main class="screens"><section class="screen" id="home"><div class="heroCopy"><h1 id="greeting">Good evening.</h1></div><div class="week" id="week"></div><section class="panel"><div class="panelHead"><h2>Today's Done</h2></div><div class="list" id="doneList"></div></section></section><section class="screen hidden" id="pondScreen"></section></main><div class="quickThread hidden" id="quickThread"></div><form class="doneForm bottomComposer" id="doneForm"><input id="doneInput" placeholder="Say something to Grimm." autocomplete="off" maxlength="220"><button class="send">Send</button></form><div class="anchor"><section class="chat" id="chat"><div class="log" id="chatLog"></div></section><button class="speech" id="speech" type="button">Pond restored. Tap me if you need the full interrogation.</button><button class="orb" id="orb" type="button" aria-label="Open Grimm"><span class="badge" id="badge"></span></button></div></div></div>
 <span id="fedCount" hidden>0</span><span id="foodCount" hidden>0</span>
 <script src="app.js"></script>
 </body>
