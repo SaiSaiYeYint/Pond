@@ -736,9 +736,51 @@ html, body {
   background:transparent!important;
 }
 </style>
+<style id="orbComposerDock">
+/* --- Unified bottom-centered orb + composer dock (all chat states: min & max) --- */
+/* ID-scoped so it wins over every earlier .chatLayer-scoped override */
+#phone{--dockW:min(356px,calc(100% - 44px));--orbSlot:66px;--dockBottom:18px}
+@media(max-width:480px){#phone{--dockW:min(344px,calc(100% - 34px));--dockBottom:14px}}
+
+/* Composer occupies the right portion of the centered dock */
+#phone .bottomComposer{
+  position:absolute!important;
+  left:calc(50% - var(--dockW)/2 + var(--orbSlot))!important;
+  right:auto!important;
+  width:calc(var(--dockW) - var(--orbSlot))!important;
+  transform:none!important;
+  margin:0!important;
+  bottom:calc(var(--dockBottom) + var(--keyboard-lift,0px))!important;
+}
+
+/* Orb sits at the left edge of the dock, aligned with the chat box column */
+#phone .orb{
+  position:absolute!important;
+  left:calc(50% - var(--dockW)/2)!important;
+  right:auto!important;
+  top:auto!important;
+  bottom:calc(var(--dockBottom) + var(--keyboard-lift,0px))!important;
+  transform:none!important;
+  margin:0!important;
+  z-index:130!important;
+  display:grid!important;
+  place-items:center!important;
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+
+/* Keep the chat box column centered and aligned to the dock when maximized */
+#phone.chatMode .anchor{
+  left:50%!important;
+  right:auto!important;
+  width:var(--dockW)!important;
+  transform:translateX(-50%)!important;
+}
+</style>
 </head>
 <body>
-<div class="stage"><div class="phone chatState-minimized" id="phone"><div class="pondLayer" id="pondLayer"><div class="pond"><canvas id="pondCanvas"></canvas></div><div class="waterGlow"></div></div><main class="pageLayer" id="pageLayer"><div class="screens"><section class="screen" id="home"><div class="heroCopy"><h1 id="greeting">Good evening.</h1></div><div class="week" id="week"></div><section class="panel"><div class="panelHead"><h2>Today's Done</h2></div><div class="list" id="doneList"></div></section></section><section class="screen hidden" id="pondScreen"></section></div></main><section class="chatLayer" id="chatLayer"><header class="top"><button class="pill brandPill" id="switchBtn" type="button">Pond</button><div class="hudRight"><div class="pill coinPill" aria-label="Trophies"><span class="trophyIcon" aria-hidden="true"></span><span id="trophies">0</span></div><div class="pill coinPill" aria-label="Coins"><span class="coinIcon" aria-hidden="true"></span><span id="coins">0</span></div></div></header><div class="rewardToast hidden" id="rewardToast"></div><div class="quickThread hidden" id="quickThread"></div><div class="anchor"><section class="chat" id="chat"><div class="log" id="chatLog"></div></section><button class="speech" id="speech" type="button">Pond restored. Tap me if you need the full interrogation.</button><button class="orb" id="orb" type="button" aria-label="Open Grimm"><span class="badge" id="badge"></span></button></div><form class="doneForm bottomComposer" id="doneForm"><input id="doneInput" placeholder="Say something to Grimm." autocomplete="off" maxlength="220"><button class="send">Send</button></form></section></div></div>
+<div class="stage"><div class="phone chatState-minimized" id="phone"><div class="pondLayer" id="pondLayer"><div class="pond"><canvas id="pondCanvas"></canvas></div><div class="waterGlow"></div></div><main class="pageLayer" id="pageLayer"><div class="screens"><section class="screen" id="home"><div class="heroCopy"><h1 id="greeting">Good evening.</h1></div><div class="week" id="week"></div><section class="panel"><div class="panelHead"><h2>Today's Done</h2></div><div class="list" id="doneList"></div></section></section><section class="screen hidden" id="pondScreen"></section></div></main><section class="chatLayer" id="chatLayer"><header class="top"><button class="pill brandPill" id="switchBtn" type="button">Pond</button><div class="hudRight"><div class="pill coinPill" aria-label="Trophies"><span class="trophyIcon" aria-hidden="true"></span><span id="trophies">0</span></div><div class="pill coinPill" aria-label="Coins"><span class="coinIcon" aria-hidden="true"></span><span id="coins">0</span></div></div></header><div class="rewardToast hidden" id="rewardToast"></div><div class="quickThread hidden" id="quickThread"></div><div class="anchor"><section class="chat" id="chat"><div class="log" id="chatLog"></div></section><button class="speech" id="speech" type="button">Pond restored. Tap me if you need the full interrogation.</button></div><form class="doneForm bottomComposer" id="doneForm"><input id="doneInput" placeholder="Say something to Grimm." autocomplete="off" maxlength="220"><button class="send">Send</button></form><button class="orb" id="orb" type="button" aria-label="Open Grimm"><span class="badge" id="badge"></span></button></section></div></div>
 <span id="fedCount" hidden>0</span><span id="foodCount" hidden>0</span>
 <script src="app.js"></script>
 </body>
