@@ -122,7 +122,7 @@ to{opacity:1; transform:translateX(0) translateY(0) scale(1)}
 .phone[data-chat-state="minimized"] .pageLayer{opacity:1; visibility:visible; pointer-events:none}
 .phone[data-chat-state="minimized"] .chatLayer>*{pointer-events:none}
 .phone[data-chat-state="minimized"] .top,.phone[data-chat-state="minimized"] .chatDock,.phone[data-chat-state="minimized"] .anchor{pointer-events:auto}
-.phone[data-chat-state="minimized"] .orb{bottom:3px}
+.phone[data-chat-state="minimized"] .orb{bottom:0}
 .phone[data-chat-state="maximized"] .pageLayer,.phone[data-chat-state="keyboard"] .pageLayer{opacity:0; visibility:hidden; pointer-events:none}
 .phone[data-chat-state="maximized"] .quickThread,.phone[data-chat-state="keyboard"] .quickThread{display:none}
 .phone[data-chat-state="maximized"] .anchor{left:50%; width:var(--chat-width); top:86px; bottom:calc(env(safe-area-inset-bottom) + var(--messages-bottom))}
@@ -131,7 +131,7 @@ to{opacity:1; transform:translateX(0) translateY(0) scale(1)}
 .phone[data-chat-state="maximized"] .chat,.phone[data-chat-state="keyboard"] .chat{display:flex; height:100%; flex-direction:column; align-items:center; width:100%}
 .phone[data-chat-state="maximized"] .log,.phone[data-chat-state="keyboard"] .log{height:100%; padding:0 0 12px; width:100%}
 .phone[data-chat-state="keyboard"] .log{justify-content:flex-end; padding-bottom:18px}
-.phone[data-chat-state="keyboard"] .top{opacity:0; visibility:hidden; pointer-events:none}
+.phone[data-chat-state="maximized"] .top,.phone[data-chat-state="keyboard"] .top{opacity:0; visibility:hidden; pointer-events:none}
 .phone.workMode .bubble.g,.phone.workMode .quickBubble.g{background:rgba(3,8,8,.94); color:#f4fbf8; border-color:rgba(255,255,255,.1)}
 /* responsive */
 @media(max-width:480px){
