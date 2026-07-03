@@ -47,7 +47,7 @@ h1{font-size:28px; line-height:1; margin:0 0 6px; letter-spacing:0}
 .anchor{position:absolute; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + var(--messages-bottom)); z-index:30; width:var(--dock-width); display:flex; align-items:stretch; overflow:visible; pointer-events:none; transition:top .28s cubic-bezier(.2,.8,.2,1),bottom .28s cubic-bezier(.2,.8,.2,1)}
 .chat{display:none; width:100%; margin:0; border:0; background:transparent; box-shadow:none; overflow:visible}
 .chat.open{display:flex; flex-direction:column; pointer-events:auto}
-.log{pointer-events:auto; height:auto; max-height:none; display:flex; flex-direction:column; gap:8px; background:transparent; padding:0; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; touch-action:pan-y; -webkit-overflow-scrolling:touch}
+.log{pointer-events:auto; height:auto; max-height:none; display:flex; flex-direction:column; gap:9px; background:transparent; padding:0; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; touch-action:pan-y; -webkit-overflow-scrolling:touch; scroll-behavior:smooth}
 .log::-webkit-scrollbar,.list::-webkit-scrollbar{display:none}
 .speech{display:none}
 .orb{position:absolute; left:var(--orb-left); bottom:0; z-index:45; width:58px; height:58px; border-radius:50%; background:#030605; border:1px solid rgba(255,255,255,.14); box-shadow:0 12px 32px rgba(0,0,0,.42); display:grid; place-items:center; pointer-events:auto}

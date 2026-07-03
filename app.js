@@ -683,12 +683,17 @@ function renderChat() {
     }
   });
   if (grimmTypingInChat) chatLog.appendChild(quickBubble("g", "", true));
-  chatLog.scrollTop = chatLog.scrollHeight;
+  scrollChatToLatest();
 }
 
 function scrollChatToLatest() {
   if (!chatLog) return;
   chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function scheduleChatScroll() {
+  requestAnimationFrame(scrollChatToLatest);
+  setTimeout(scrollChatToLatest, 90);
 }
 
 function decisionButtons() {
@@ -737,7 +742,8 @@ function showQuickThread({ userText = "", grimmText = "", typing = false, hold =
   quickThread.classList.remove("leaving");
   quickThread.replaceChildren();
   if (userText) quickThread.appendChild(quickBubble("u", userText));
-  for (const line of grimmSegments(grimmText)) quickThread.appendChild(quickBubble("g", line));
+  const grimmLines = grimmSegments(grimmText).slice(-2);
+  for (const line of grimmLines) quickThread.appendChild(quickBubble("g", line));
   if (typing) quickThread.appendChild(quickBubble("g", "", true));
   while (quickThread.children.length > 3) quickThread.firstElementChild.remove();
   if (!quickThread.children.length) return;
@@ -820,15 +826,22 @@ async function saySequential(text, renderNow = true) {
       state.unread = false;
       updateBadge();
       renderChat();
+      scheduleChatScroll();
     }
     if (i < parts.length - 1) {
-      await wait(Math.min(1050, 520 + part.length * 16));
+      await wait(Math.min(900, 420 + part.length * 10));
       grimmTypingInChat = true;
       showQuickThread({ userText: quickUser, grimmText: delivered.join("\n"), typing: true, hold: 30000 });
-      if (chat.classList.contains("open")) renderChat();
+      if (chat.classList.contains("open")) {
+        renderChat();
+        scheduleChatScroll();
+      }
       await wait(620 + Math.min(700, parts[i + 1].length * 12));
       grimmTypingInChat = false;
-      if (chat.classList.contains("open")) renderChat();
+      if (chat.classList.contains("open")) {
+        renderChat();
+        scheduleChatScroll();
+      }
     }
   }
 
@@ -867,6 +880,7 @@ async function answerWithGrimm(text, replyFactory) {
 
 function user(text) {
   state.chat.push({ role: "u", text, at: new Date().toISOString() });
+  scheduleChatScroll();
 }
 
 function buildCaseStudy() {
