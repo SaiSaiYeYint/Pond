@@ -7,13 +7,13 @@
 <style>
 
 /* base */
-:root{--deep:#061817; --mid:#0a2e2b; --ink:#f7fbf8; --muted:rgba(247,251,248,.66); --line:rgba(255,255,255,.13); --paper:#fffdf5; --paperText:#151713; --gold:#f2c14e; --red:#ff5145; --shadow:0 24px 70px rgba(0,0,0,.44); --phone-width:min(430px,100vw); --dock-width:min(320px,calc(100vw - 110px)); --dock-shift:36px; --orb-left:-70px}
+:root{--deep:#061817; --mid:#0a2e2b; --ink:#f7fbf8; --muted:rgba(247,251,248,.66); --line:rgba(255,255,255,.13); --paper:#fffdf5; --paperText:#151713; --gold:#f2c14e; --red:#ff5145; --shadow:0 24px 70px rgba(0,0,0,.44); --phone-width:min(430px,100vw); --chat-width:min(430px,calc(100vw - 32px)); --dock-width:min(320px,calc(100vw - 110px)); --dock-shift:36px; --orb-left:-70px}
 *{box-sizing:border-box}
 html,body{width:100%; height:100%; margin:0; overflow:hidden; position:fixed; inset:0; background:#030706; color:var(--ink); font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; overscroll-behavior:none}
 button,input{font:inherit}
 button{cursor:pointer}
-.stage{width:100vw; height:100dvh; display:block; overflow:hidden; background:#030706}
-.phone{position:relative; width:100vw; height:100dvh; min-height:100dvh; overflow:hidden; background:var(--deep); isolation:isolate}
+.stage{width:100vw; height:100vh; height:100lvh; display:block; overflow:hidden; background:#030706}
+.phone{position:relative; width:100vw; height:100vh; height:100lvh; min-height:100vh; min-height:100lvh; overflow:hidden; background:var(--deep); isolation:isolate}
 /* pondLayer */
 .pondLayer{position:absolute; inset:0; z-index:0; pointer-events:auto; overflow:hidden}
 .pond,.waterGlow{position:absolute; inset:0}
@@ -43,13 +43,13 @@ h1{font-size:28px; line-height:1; margin:0 0 6px; letter-spacing:0}
 .quickThread.hidden{display:none}
 .quickThread.leaving .quickBubble.u{animation:bubbleOutSmooth 1.15s ease forwards}
 .quickThread.leaving .quickBubble.g{animation:bubbleOutSmooth 1.15s ease .42s forwards}
-.anchor{position:absolute; left:calc(50% + var(--dock-shift)); transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 78px + var(--keyboard-lift)); z-index:30; width:var(--dock-width); display:flex; align-items:stretch; overflow:visible; pointer-events:none}
+.anchor{position:absolute; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 78px + var(--keyboard-lift)); z-index:30; width:var(--dock-width); display:flex; align-items:stretch; overflow:visible; pointer-events:none}
 .chat{display:none; width:100%; margin:0; border:0; background:transparent; box-shadow:none; overflow:visible}
 .chat.open{display:flex; flex-direction:column; pointer-events:auto}
 .log{pointer-events:auto; height:auto; max-height:none; display:flex; flex-direction:column; gap:8px; background:transparent; padding:0; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; touch-action:pan-y; -webkit-overflow-scrolling:touch}
 .log::-webkit-scrollbar,.list::-webkit-scrollbar{display:none}
 .speech{display:none}
-.orb{position:absolute; left:var(--orb-left); bottom:-66px; z-index:45; width:58px; height:58px; border-radius:50%; background:#030605; border:1px solid rgba(255,255,255,.14); box-shadow:0 12px 32px rgba(0,0,0,.42); display:grid; place-items:center; pointer-events:auto}
+.orb{position:absolute; left:calc(50% + var(--dock-shift) - (var(--dock-width) / 2) + var(--orb-left)); bottom:calc(env(safe-area-inset-bottom) + 12px + var(--keyboard-lift)); z-index:45; width:58px; height:58px; border-radius:50%; background:#030605; border:1px solid rgba(255,255,255,.14); box-shadow:0 12px 32px rgba(0,0,0,.42); display:grid; place-items:center; pointer-events:auto}
 .orb:before{content:""; width:23px; height:7px; border-radius:999px; background:var(--gold); box-shadow:0 0 15px rgba(242,193,78,.9)}
 .orb.talk:before{height:19px; border-radius:50%; animation:stare .22s infinite alternate}
 .badge{position:absolute; top:-1px; right:-1px; width:12px; height:12px; border-radius:50%; background:var(--red); display:none; border:2px solid #030605; box-shadow:0 0 0 2px rgba(255,255,255,.1),0 0 14px var(--red)}
@@ -93,8 +93,8 @@ input::placeholder{color:rgba(247,251,248,.42)}
 .quickBubble.u,.bubble.u{align-self:flex-end; background:rgba(255,253,245,.96); color:#151713; border:1px solid rgba(255,255,255,.72); border-bottom-right-radius:6px; transform-origin:bottom right; animation:userBubbleIn .34s cubic-bezier(.18,.9,.22,1)}
 .quickBubble.g,.bubble.g{align-self:flex-start; background:rgba(3,8,8,.94); color:#f4fbf8; border:1px solid rgba(255,255,255,.1); border-bottom-left-radius:6px; transform-origin:bottom left; animation:grimmBubbleIn .3s cubic-bezier(.18,.9,.22,1)}
 .quickBubble{white-space:normal; overflow:visible; text-overflow:clip}
-.quickBubble.typing,.bubble.typing{align-self:flex-start; width:46px; max-width:46px; min-width:46px; height:32px; min-height:34px; margin:0; padding:0; color:transparent; font-size:0; line-height:0; position:relative; overflow:hidden}
-.quickBubble.typing:before,.bubble.typing:before{content:""; position:absolute; left:11px; top:50%; width:6px; height:6px; border-radius:50%; background:#f7fbf8; box-shadow:12px 0 0 rgba(247,251,248,.64),24px 0 0 rgba(247,251,248,.36); animation:typingDots 1s infinite ease-in-out; transform:translateY(-50%)}
+.quickBubble.typing,.bubble.typing{align-self:flex-start; width:50px; max-width:50px; min-width:50px; height:32px; min-height:32px; margin:0; padding:0; color:transparent; font-size:0; line-height:0; position:relative; overflow:hidden}
+.quickBubble.typing:before,.bubble.typing:before{content:""; position:absolute; left:12px; top:50%; width:6px; height:6px; border-radius:50%; background:#f7fbf8; box-shadow:10px 0 0 rgba(247,251,248,.64),20px 0 0 rgba(247,251,248,.36); animation:typingDots 1s infinite ease-in-out; transform:translateY(-50%)}
 @keyframes userBubbleIn{from{opacity:0; transform:translateY(46px) scale(.78)}
 to{opacity:1; transform:translateY(0) scale(1)}
 }
@@ -103,7 +103,7 @@ to{opacity:1; transform:translateX(0) translateY(0) scale(1)}
 }
 @keyframes bubbleOutSmooth{to{opacity:0; transform:translateY(-14px) scale(.985); filter:blur(1px)}
 }
-@keyframes typingDots{50%{box-shadow:12px 0 0 #f7fbf8,24px 0 0 rgba(247,251,248,.64)}
+@keyframes typingDots{50%{box-shadow:10px 0 0 #f7fbf8,20px 0 0 rgba(247,251,248,.64)}
 }
 .decisionRow{align-self:flex-start; display:flex; gap:8px; margin:2px 0 4px}
 .decisionRow button{border:1px solid rgba(105,210,255,.36); background:rgba(10,28,39,.86); color:#dff7ff; border-radius:999px; min-height:34px; min-width:66px; padding:0 15px; font-size:12px; font-weight:1000; letter-spacing:.4px}
@@ -120,13 +120,13 @@ to{opacity:1; transform:translateX(0) translateY(0) scale(1)}
 .phone[data-chat-state="minimized"] .chat{display:none}
 .phone[data-chat-state="minimized"] .pageLayer{opacity:1; visibility:visible; pointer-events:none}
 .phone[data-chat-state="minimized"] .chatLayer>*{pointer-events:none}
-.phone[data-chat-state="minimized"] .top,.phone[data-chat-state="minimized"] .bottomComposer,.phone[data-chat-state="minimized"] .anchor{pointer-events:auto}
+.phone[data-chat-state="minimized"] .top,.phone[data-chat-state="minimized"] .bottomComposer,.phone[data-chat-state="minimized"] .anchor,.phone[data-chat-state="minimized"] .orb{pointer-events:auto}
 .phone[data-chat-state="maximized"] .pageLayer,.phone[data-chat-state="keyboard"][data-before-chat-state="maximized"] .pageLayer{opacity:0; visibility:hidden; pointer-events:none}
 .phone[data-chat-state="maximized"] .quickThread,.phone[data-chat-state="keyboard"] .quickThread{display:none}
-.phone[data-chat-state="maximized"] .anchor,.phone[data-chat-state="keyboard"] .anchor{width:var(--dock-width); top:86px; bottom:calc(env(safe-area-inset-bottom) + 78px + var(--keyboard-lift))}
+.phone[data-chat-state="maximized"] .anchor,.phone[data-chat-state="keyboard"] .anchor{left:50%; width:var(--chat-width); top:86px; bottom:calc(env(safe-area-inset-bottom) + 78px + var(--keyboard-lift))}
 .phone[data-chat-state="maximized"] .bottomComposer,.phone[data-chat-state="keyboard"] .bottomComposer{width:var(--dock-width)}
-.phone[data-chat-state="maximized"] .orb,.phone[data-chat-state="keyboard"] .orb{left:var(--orb-left)}
-.phone[data-chat-state="maximized"] .chat,.phone[data-chat-state="keyboard"] .chat{display:flex; height:100%; flex-direction:column; align-items:center; transform:translateX(calc(var(--dock-shift) * -1)); width:calc(100% + (var(--dock-shift) * 2))}
+.phone[data-chat-state="maximized"] .orb,.phone[data-chat-state="keyboard"] .orb{left:calc(50% + var(--dock-shift) - (var(--dock-width) / 2) + var(--orb-left))}
+.phone[data-chat-state="maximized"] .chat,.phone[data-chat-state="keyboard"] .chat{display:flex; height:100%; flex-direction:column; align-items:center; width:100%}
 .phone[data-chat-state="maximized"] .log,.phone[data-chat-state="keyboard"] .log{height:100%; padding:0 0 12px; width:100%}
 .phone[data-chat-state="keyboard"] .top{opacity:0; visibility:hidden; pointer-events:none}
 .phone[data-chat-state="keyboard"] .anchor{top:12px}
@@ -134,13 +134,13 @@ to{opacity:1; transform:translateX(0) translateY(0) scale(1)}
 .phone.workMode .bubble.g,.phone.workMode .quickBubble.g{background:rgba(3,8,8,.94); color:#f4fbf8; border-color:rgba(255,255,255,.1)}
 /* responsive */
 @media(max-width:480px){
-:root{--dock-width:calc(100vw - 110px); --dock-shift:34px}.screen{padding:76px 14px 106px}
+:root{--chat-width:calc(100vw - 32px); --dock-width:calc(100vw - 110px); --dock-shift:34px}.screen{padding:76px 14px 106px}
 .bottomComposer{left:calc(50% + var(--dock-shift)); transform:translateX(-50%); width:var(--dock-width)}
-.anchor{left:calc(50% + var(--dock-shift)); transform:translateX(-50%); width:var(--dock-width)}
+.anchor{left:50%; transform:translateX(-50%); width:var(--dock-width)}
 .quickThread{width:min(344px,calc(100vw - 34px)); bottom:calc(env(safe-area-inset-bottom) + 78px + var(--keyboard-lift))}
-.phone[data-chat-state="maximized"] .anchor,.phone[data-chat-state="keyboard"] .anchor{width:var(--dock-width)}
+.phone[data-chat-state="maximized"] .anchor,.phone[data-chat-state="keyboard"] .anchor{width:var(--chat-width)}
 .phone[data-chat-state="maximized"] .bottomComposer,.phone[data-chat-state="keyboard"] .bottomComposer{width:var(--dock-width)}
-.phone[data-chat-state="maximized"] .orb,.phone[data-chat-state="keyboard"] .orb{left:var(--orb-left)}
+.phone[data-chat-state="maximized"] .orb,.phone[data-chat-state="keyboard"] .orb{left:calc(50% + var(--dock-shift) - (var(--dock-width) / 2) + var(--orb-left))}
 .week{min-height:80px; padding:13px}
 .day{font-size:11px; gap:7px}
 .dot{width:34px; height:34px}
@@ -154,11 +154,12 @@ to{opacity:1; transform:translateX(0) translateY(0) scale(1)}
 
 </style></head>
 <body>
-<div class="stage"><div class="phone" id="phone" data-chat-state="minimized"><div class="pondLayer" id="pondLayer"><div class="pond"><canvas id="pondCanvas"></canvas></div><div class="waterGlow"></div></div><main class="pageLayer" id="pageLayer"><div class="screens"><section class="screen" id="home"><div class="heroCopy"><h1 id="greeting">Good evening.</h1></div><div class="week" id="week"></div><section class="panel"><div class="panelHead"><h2>Today's Done</h2></div><div class="list" id="doneList"></div></section></section><section class="screen hidden" id="pondScreen"></section></div></main><section class="chatLayer" id="chatLayer"><header class="top"><button class="pill brandPill" id="switchBtn" type="button">Pond</button><div class="hudRight"><div class="pill coinPill" aria-label="Trophies"><span class="trophyIcon" aria-hidden="true"></span><span id="trophies">0</span></div><div class="pill coinPill" aria-label="Coins"><span class="coinIcon" aria-hidden="true"></span><span id="coins">0</span></div></div></header><div class="rewardToast hidden" id="rewardToast"></div><div class="quickThread hidden" id="quickThread"></div><div class="anchor"><section class="chat" id="chat"><div class="log" id="chatLog"></div></section><button class="speech" id="speech" type="button">Pond restored. Tap me if you need the full interrogation.</button><button class="orb" id="orb" type="button" aria-label="Open Grimm"><span class="badge" id="badge"></span></button></div><form class="doneForm bottomComposer" id="doneForm"><input id="doneInput" placeholder="Say something to Grimm." autocomplete="off" maxlength="220"><button class="send">Send</button></form></section></div></div>
+<div class="stage"><div class="phone" id="phone" data-chat-state="minimized"><div class="pondLayer" id="pondLayer"><div class="pond"><canvas id="pondCanvas"></canvas></div><div class="waterGlow"></div></div><main class="pageLayer" id="pageLayer"><div class="screens"><section class="screen" id="home"><div class="heroCopy"><h1 id="greeting">Good evening.</h1></div><div class="week" id="week"></div><section class="panel"><div class="panelHead"><h2>Today's Done</h2></div><div class="list" id="doneList"></div></section></section><section class="screen hidden" id="pondScreen"></section></div></main><section class="chatLayer" id="chatLayer"><header class="top"><button class="pill brandPill" id="switchBtn" type="button">Pond</button><div class="hudRight"><div class="pill coinPill" aria-label="Trophies"><span class="trophyIcon" aria-hidden="true"></span><span id="trophies">0</span></div><div class="pill coinPill" aria-label="Coins"><span class="coinIcon" aria-hidden="true"></span><span id="coins">0</span></div></div></header><div class="rewardToast hidden" id="rewardToast"></div><div class="quickThread hidden" id="quickThread"></div><div class="anchor"><section class="chat" id="chat"><div class="log" id="chatLog"></div></section><button class="speech" id="speech" type="button">Pond restored. Tap me if you need the full interrogation.</button></div><button class="orb" id="orb" type="button" aria-label="Open Grimm"><span class="badge" id="badge"></span></button><form class="doneForm bottomComposer" id="doneForm"><input id="doneInput" placeholder="Say something to Grimm." autocomplete="off" maxlength="220"><button class="send">Send</button></form></section></div></div>
 <span id="fedCount" hidden>0</span><span id="foodCount" hidden>0</span>
 <script src="app.js"></script>
 </body>
 </html>
+
 
 
 
