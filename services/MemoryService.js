@@ -1,9 +1,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 export class MemoryService {
   constructor(root = process.cwd()) {
-    this.dataDir = join(root, "data");
+    this.dataDir = process.env.VERCEL ? join(tmpdir(), "grimm-data") : join(root, "data");
   }
 
   load() {

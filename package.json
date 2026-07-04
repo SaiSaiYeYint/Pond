@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build": "node -e \"console.log('Static app ready for Vercel')\""
   },
   "dependencies": {
     "cors": "^2.8.5",
