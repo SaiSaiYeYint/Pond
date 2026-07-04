@@ -2,10 +2,7 @@
   "version": 2,
   "functions": {
     "api/grimm.js": {
-      "includeFiles": [
-        "grimm/**",
-        "builder/templates/**"
-      ]
+      "includeFiles": "{grimm/**,builder/templates/**}"
     }
   },
   "rewrites": [
