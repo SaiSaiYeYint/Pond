@@ -1047,7 +1047,7 @@ function localJudge(text) {
 async function grimmReply(text, decision = null) {
   if (isLocalCommand(text)) return localReply(text);
   const ai = await callGrimmService(text, isWorkTimeCommand(text) ? "workshop" : state.workTime ? "workshop" : "normal", decision);
-  if (!ai) return localReply(text);
+  if (!ai) return location.protocol === "file:" ? localReply(text) : "Grimm's real brain did not answer. The bridge is failing, not me. Check Vercel /api/grimm logs.";
   applyAiStructured({
     reply: ai.reply,
     coinsDelta: ai.coinsDelta,
@@ -1078,11 +1078,18 @@ async function callGrimmService(message, mode = "normal", decision = null) {
         recentMessages: state.chat.slice(-12).map(m => ({ role: m.role === "g" ? "grimm" : "player", text: m.text }))
       })
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.warn("GrimmService failed", response.status, await response.text().catch(() => ""));
+      return null;
+    }
     const data = await response.json();
-    if (!data?.reply) return null;
+    if (!data?.reply) {
+      console.warn("GrimmService returned no reply", data);
+      return null;
+    }
     return data;
-  } catch {
+  } catch (error) {
+    console.warn("GrimmService request failed", error);
     return null;
   }
 }
@@ -1325,7 +1332,7 @@ $("doneForm").addEventListener("submit", async e => {
     const goal = todayGoal();
     const goalReached = reachesGoal(text, goal);
     if (goalReached) awardGoalTrophy(goal, text);
-    await answerWithGrimm(text, () => Promise.resolve(judgedGoalReply(j, goalReached)));
+    await answerWithGrimm(text, () => grimmReply(text));
     render();
   } finally {
     form.dataset.busy = "false";
