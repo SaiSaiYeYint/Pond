@@ -158,9 +158,9 @@ function save() {
 
 function ensureAiDefaults() {
   state.ai ||= {};
-  state.ai.endpoint = "";
-  state.ai.model = "local";
-  state.ai.mode = "local";
+  state.ai.endpoint = location.protocol === "file:" ? "http://127.0.0.1:8787/grimm" : "/api/grimm";
+  state.ai.model = "gemini";
+  state.ai.mode = "grimm-service";
 }
 
 function resize() {
@@ -1041,7 +1041,38 @@ function localJudge(text) {
 
 async function grimmReply(text) {
   if (isLocalCommand(text)) return localReply(text);
-  return localReply(text);
+  const ai = await callGrimmService(text, state.workTime ? "workshop" : "normal");
+  if (!ai) return localReply(text);
+  applyAiStructured({
+    reply: ai.reply,
+    coinsDelta: ai.coinsDelta,
+    memoryUpdate: ai.memoryUpdate,
+    mode: state.workTime ? "workshop" : "normal",
+    theory: ai.suggestedActions?.[0] || ""
+  }, text);
+  if (Number(ai.coinsDelta)) coin(Number(ai.coinsDelta), "GrimmService: " + text);
+  return ai.reply;
+}
+
+async function callGrimmService(message, mode = "normal") {
+  try {
+    const response = await fetch(state.ai.endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message,
+        mode,
+        playerMemory: buildCaseStudy(),
+        recentMessages: state.chat.slice(-12).map(m => ({ role: m.role === "g" ? "grimm" : "player", text: m.text }))
+      })
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (!data?.reply) return null;
+    return data;
+  } catch {
+    return null;
+  }
 }
 
 async function simonReply(text) {

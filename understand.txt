@@ -1,0 +1,86 @@
+Full UI cleanup/refactor.
+
+Problem:
+The app currently works through many repeated CSS override blocks and too many `!important` patches. Stop patching. Clean the layout.
+
+Goal:
+Rebuild the UI into a clean 3-layer architecture while preserving the current visual style and app behavior.
+
+Layers:
+1. pondLayer
+- Bottom layer.
+- Contains pond canvas, fish, feeding, water visuals.
+- Full viewport.
+- Never moves.
+- Never uses keyboard variables.
+
+2. pageLayer
+- Middle layer.
+- Contains current Done List app and week tracker.
+- Future pages will swipe.
+- Visible when chat is minimized.
+- Hidden when chat is maximized.
+- Never affected by keyboard.
+
+3. chatLayer
+- Top layer.
+- Contains header, chat messages, quick bubbles, Grimm orb, composer.
+- This is the only layer affected by keyboard.
+
+Cleanup:
+- Remove duplicated/conflicting style blocks.
+- Remove unnecessary `!important`.
+- Extract layout into clear CSS sections:
+  base
+  pondLayer
+  pageLayer
+  chatLayer
+  components
+  states
+  responsive
+- Keep design mostly the same.
+
+Chat states:
+Use one state system:
+`data-chat-state="minimized"`
+`data-chat-state="maximized"`
+`data-chat-state="keyboard"`
+
+Minimized:
+- Page visible.
+- Pond active.
+- Chat history hidden.
+- Quick bubbles visible.
+- Orb + composer docked bottom.
+
+Maximized:
+- Page hidden.
+- Pond remains background.
+- Chat history visible and internally scrollable.
+- Orb + composer docked bottom.
+
+Keyboard:
+- Detect with visualViewport.
+- Store previous state.
+- Set state to keyboard.
+- Hide header.
+- Body never scrolls.
+- Pond never moves.
+- Page never moves.
+- Only orb + composer move upward together.
+- Chat messages use the space above keyboard and scroll internally.
+- Closing keyboard restores previous state.
+
+Important:
+Only chatLayer may use `--keyboard-lift`.
+pondLayer and pageLayer must never use it.
+
+Acceptance:
+- No body/page scrolling.
+- No background movement.
+- Orb and input stay aligned.
+- Keyboard mode works on mobile Safari.
+- Done list still works.
+- Fish feeding still works.
+- Chat minimized/maximized still works.
+- CSS is shorter and easier to maintain.
