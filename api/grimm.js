@@ -10,6 +10,17 @@ const workOrderService = new WorkOrderService();
 
 export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(204).end();
+  if (req.method === "GET") {
+    return res.status(200).json({
+      ok: true,
+      route: "/api/grimm",
+      provider: "gemini",
+      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+      hasApiKey: Boolean(process.env.GEMINI_API_KEY),
+      constitutionLoaded: grimmService.hasFile("grimm/constitution.md"),
+      promptFilesLoaded: grimmService.promptFiles("normal").filter(file => grimmService.hasFile(file))
+    });
+  }
   if (req.method !== "POST") return res.status(405).json({ error: "method_not_allowed" });
 
   try {
@@ -32,6 +43,7 @@ export default async function handler(req, res) {
     memoryService.saveUpdate(response.memoryUpdate, input.message);
     return res.status(200).json(response);
   } catch (error) {
+    console.error(error);
     return res.status(500).json({
       error: "grimm_failed",
       message: error instanceof Error ? error.message : "Unknown server error"

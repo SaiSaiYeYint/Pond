@@ -45,6 +45,10 @@ export class GrimmService {
       return "";
     }
   }
+
+  hasFile(file) {
+    return Boolean(this.read(file).trim());
+  }
 }
 
 function parseJson(text) {
