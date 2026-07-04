@@ -17,9 +17,31 @@ export class MemoryService {
     this.write("player_memory.json", { ...memory, updatedAt: new Date().toISOString() });
   }
 
+  forRequest(clientMemory = {}) {
+    return this.merge(this.load(), clientMemory);
+  }
+
+  saveUpdate(update = {}, source = "") {
+    const next = this.applyUpdate(this.load(), update, source);
+    this.save(next);
+    return next;
+  }
+
+  merge(storedMemory = {}, clientMemory = {}) {
+    const next = { ...defaultMemory(), ...storedMemory };
+    if (clientMemory && typeof clientMemory === "object") {
+      next.clientContext = {
+        profile: clientMemory.profile || {},
+        theories: Array.isArray(clientMemory.theories) ? clientMemory.theories.slice(-8) : [],
+        recentEvidence: Array.isArray(clientMemory.recentEvidence) ? clientMemory.recentEvidence.slice(-20) : []
+      };
+    }
+    return next;
+  }
+
   applyUpdate(memory, update = {}, source = "") {
     const next = { ...defaultMemory(), ...memory };
-    for (const key of ["facts", "preferences", "patterns", "relationship"]) {
+    for (const key of ["facts", "preferences", "patterns", "goals", "relationship"]) {
       next[key] ||= [];
       const values = Array.isArray(update[key]) ? update[key] : [];
       for (const value of values) {

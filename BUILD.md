@@ -1,5 +1,9 @@
 # Grimm App Build Notes
 
+## Start Here
+
+Every AI builder must read `builder/PROJECT_STATE.md` before changing code. It is the single source of truth for the current project state, current priority, stable systems, and next planned work.
+
 ## Current Prototype
 
 This is a static pond app prototype. The app itself is not called Grimm. Grimm is the AI character/chat presence inside the app.

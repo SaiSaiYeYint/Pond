@@ -8,13 +8,14 @@ export class GeminiProvider {
     return Boolean(this.apiKey);
   }
 
-  async generate(prompt) {
+  async generate(prompt, { systemInstruction = "" } = {}) {
     if (!this.apiKey) throw new Error("GEMINI_API_KEY is missing.");
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(this.model)}:generateContent?key=${encodeURIComponent(this.apiKey)}`;
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction }] } : undefined,
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.85,

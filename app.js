@@ -757,7 +757,7 @@ function updateBadge() {
   badge.style.display = hasVisibleDecision && !chat.classList.contains("open") ? "block" : "none";
 }
 
-function resolveDecision(accepted) {
+async function resolveDecision(accepted) {
   const decision = state.pendingDecision;
   state.pendingDecision = null;
   updateBadge();
@@ -765,8 +765,13 @@ function resolveDecision(accepted) {
     render();
     return;
   }
-  user(accepted ? "YES" : "NO");
-  say(accepted ? "Approved. I will keep that task warm for Codex." : "Rejected. Tossed into the pond. Next problem?", false);
+  const answer = accepted ? "YES" : "NO";
+  user(answer);
+  if (decision.type === "improvement") {
+    await answerWithGrimm(answer, () => grimmReply(answer, decision));
+  } else {
+    say(accepted ? "Approved. Kept." : "Rejected. Tossed into the pond. Next problem?", false);
+  }
   render();
 }
 
@@ -994,7 +999,7 @@ function applyAiStructured(ai, sourceText = "") {
   }
   if (ai.mode === "workshop") {
     state.workTime = true;
-    if (!ai.codexTask) state.pendingDecision = null;
+    if (!ai.codexTask && state.pendingDecision?.type !== "improvement") state.pendingDecision = null;
   }
   if ((ai.mode === "normal" && state.workTime && /work done/i.test(sourceText)) || /simon says work done/i.test(sourceText)) {
     state.workTime = false;
@@ -1039,22 +1044,28 @@ function localJudge(text) {
   return { valid: true, score, grimm, theory: score < 0 ? "Avoidance may be presented as progress." : "Concrete proof increases follow-through." };
 }
 
-async function grimmReply(text) {
+async function grimmReply(text, decision = null) {
   if (isLocalCommand(text)) return localReply(text);
-  const ai = await callGrimmService(text, state.workTime ? "workshop" : "normal");
+  const ai = await callGrimmService(text, isWorkTimeCommand(text) ? "workshop" : state.workTime ? "workshop" : "normal", decision);
   if (!ai) return localReply(text);
   applyAiStructured({
     reply: ai.reply,
     coinsDelta: ai.coinsDelta,
     memoryUpdate: ai.memoryUpdate,
-    mode: state.workTime ? "workshop" : "normal",
+    mode: ai.mode || (isWorkTimeCommand(text) ? "workshop" : state.workTime ? "workshop" : "normal"),
     theory: ai.suggestedActions?.[0] || ""
   }, text);
+  if (ai.decision) {
+    state.pendingDecision = {
+      ...ai.decision,
+      attachToNextReply: true
+    };
+  }
   if (Number(ai.coinsDelta)) coin(Number(ai.coinsDelta), "GrimmService: " + text);
   return ai.reply;
 }
 
-async function callGrimmService(message, mode = "normal") {
+async function callGrimmService(message, mode = "normal", decision = null) {
   try {
     const response = await fetch(state.ai.endpoint, {
       method: "POST",
@@ -1062,6 +1073,7 @@ async function callGrimmService(message, mode = "normal") {
       body: JSON.stringify({
         message,
         mode,
+        decision,
         playerMemory: buildCaseStudy(),
         recentMessages: state.chat.slice(-12).map(m => ({ role: m.role === "g" ? "grimm" : "player", text: m.text }))
       })
@@ -1076,8 +1088,13 @@ async function callGrimmService(message, mode = "normal") {
 }
 
 async function simonReply(text) {
-  const admin = handleSimonCommand(text);
-  return admin.reply + (admin.codexTask ? " Codex task: " + admin.codexTask : "");
+  if (isWorkTimeCommand(text)) return grimmReply(text);
+  if (/^simon says work done$/i.test(text.trim())) {
+    state.workTime = false;
+    state.pendingDecision = null;
+    return "Workshop closed. I am going back under the pond. Try to behave.";
+  }
+  return "Simon heard you. Workshop opens only with: simon says work time.";
 }
 
 function ensureQuestion(reply, text = "") {
@@ -1117,6 +1134,10 @@ function judgedGoalReply(j, goalReached) {
 
 function isSimonCommand(text) {
   return text.toLowerCase().trim().startsWith("simon says");
+}
+
+function isWorkTimeCommand(text) {
+  return text.toLowerCase().trim() === "simon says work time";
 }
 
 function cleanCodexTask(command) {

@@ -8,46 +8,34 @@ export class GrimmService {
     this.provider = provider;
   }
 
-  async respond({ message = "", mode = "normal", playerMemory = {}, recentMessages = [] } = {}) {
+  async respond({ message = "", mode = "normal", playerMemory = {}, recentMessages = [], improvementIdea = null, improvementReview = null, improvementDecision = null, lastImprovementDecision = null } = {}) {
     if (!this.provider.configured) return mockResponse(message, mode);
-    const text = await this.provider.generate(this.prompt({ message, mode, playerMemory, recentMessages }));
+    const text = await this.provider.generate(
+      this.buildPrompt({ message, mode, playerMemory, recentMessages, improvementIdea, improvementReview, improvementDecision, lastImprovementDecision }),
+      { systemInstruction: this.read("grimm/constitution.md") }
+    );
     return cleanResponse(parseJson(text));
   }
 
-  prompt(input) {
-    const workshopPrompt = input.mode === "workshop" ? this.read("grimm/prompts/grimm_workshop.md") : "";
+  buildPrompt(input) {
     return [
-      "You are running Grimm through GrimmService. The model is not the source of truth.",
-      "Read the Constitution and return structured output only.",
-      "",
-      "--- grimm/constitution.md ---",
-      this.read("grimm/constitution.md"),
-      "",
-      "--- grimm/operating_manual.md ---",
-      this.read("grimm/operating_manual.md"),
-      "",
-      "--- active prompt ---",
-      workshopPrompt || this.read("grimm/prompts/grimm_normal.md"),
-      "",
-      "Output JSON only with this exact shape:",
-      JSON.stringify({
-        reply: "short Grimm reply",
-        memoryUpdate: {},
-        coinsDelta: 0,
-        suggestedActions: []
-      }, null, 2),
-      "",
-      "Rules:",
-      "- Return a single raw JSON object. No markdown. No commentary. No code fence.",
-      "- reply must sound like Grimm, not a generic assistant.",
-      "- coinsDelta must be an integer from -24 to 44.",
-      "- suggestedActions is an array of short strings.",
-      "- normal mode is for player conversation.",
-      "- workshop mode is private owner/development mode. Prepare for it, but do not expose private notes in normal mode.",
-      "",
-      "Input:",
-      JSON.stringify(input, null, 2)
-    ].join("\n");
+      ...this.promptFiles(input.mode).map(file => this.section(file)),
+      this.section("runtime/input.json", JSON.stringify(input, null, 2))
+    ].filter(Boolean).join("\n\n");
+  }
+
+  promptFiles(mode) {
+    return [
+      "grimm/personality.md",
+      "grimm/rules.md",
+      "grimm/examples.md",
+      "grimm/operating_manual.md",
+      mode === "workshop" ? "grimm/prompts/grimm_workshop.md" : "grimm/prompts/grimm_normal.md"
+    ];
+  }
+
+  section(file, content = this.read(file)) {
+    return content ? `--- ${file} ---\n${content}` : "";
   }
 
   read(file) {
@@ -70,10 +58,12 @@ function parseJson(text) {
 }
 
 function cleanResponse(json) {
+  const mode = json.mode === "workshop" ? "workshop" : json.mode === "normal" ? "normal" : undefined;
   return {
-    reply: cleanText(json.reply || "Noted. Now bring me proof.", 260),
+    reply: cleanText(json.reply || "Noted. Now bring me proof.", mode === "workshop" ? 1200 : 260),
     memoryUpdate: json.memoryUpdate && typeof json.memoryUpdate === "object" ? json.memoryUpdate : {},
     coinsDelta: clamp(json.coinsDelta, -24, 44),
+    mode,
     suggestedActions: Array.isArray(json.suggestedActions) ? json.suggestedActions.map(x => cleanText(x, 120)).slice(0, 5) : []
   };
 }
