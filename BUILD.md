@@ -152,21 +152,147 @@ Current behavior:
 
 ## Grimm Status
 
-Current Grimm uses `GrimmService` as the only AI entry point.
+Current Grimm uses `GrimmRuntime` as the AI execution path. `GrimmService` remains only as a compatibility facade for older imports.
+
+Runtime flow:
+
+```txt
+message
+-> GrimmRuntime
+-> MemoryService
+-> PromptService
+-> ProviderService
+-> ResponseValidator
+-> ReflectionService
+-> MemoryService save
+-> reply
+```
+
+### GrimmRuntime
+
+`GrimmRuntime` owns the AI conversation lifecycle. Routes should call the runtime instead of calling providers, prompt builders, or validators directly.
+
+Responsibilities:
+
+- normalize runtime input
+- load memory through `MemoryService`
+- ask `PromptService` to assemble prompts
+- call the selected provider through `ProviderService`
+- validate provider output with `ResponseValidator`
+- record internal reflections with `ReflectionService`
+- save accepted memory updates
+- return normalized responses to the API/UI
+
+### PromptService
+
+`PromptService` assembles:
+
+- `grimm/constitution.md`
+- personality/rules/examples files when present
+- the active mode prompt
+- memory summary
+- recent messages
+- current user message
+- response schema
+
+Prompt assembly should stay provider-independent. Provider adapters should not decide Grimm's personality.
+
+### ProviderService
+
+`ProviderService` hides the active model provider.
+
+Current local provider:
+
+- Ollama through `AI_PROVIDER=ollama`
+- Base URL: `OLLAMA_BASE_URL=http://localhost:11434`
+- Model: `OLLAMA_MODEL=qwen2.5:1.5b`
+
+Supported/future providers should plug in here:
+
+- Gemini
+- LM Studio
+- OpenAI
+- Claude
+- Mock/local test providers
+
+The UI must never call a model provider directly.
+
+Local development settings are documented in `.env.local.example`.
+
+### Grimm Lab
+
+`/lab` is a developer-only provider test page. It is separate from the real chat UI and calls `/api/lab`.
+
+It shows:
+
+- active provider
+- model
+- provider health
+- raw provider response
+- validated response
+- final Grimm reply
+- errors
+
+Use it to compare Ollama and Gemini without changing the pond app.
+
+### ResponseValidator
+
+`ResponseValidator` parses, repairs, normalizes, and safely falls back from AI output.
+
+Expected normalized response:
+
+```js
+{
+  reply,
+  coinsDelta,
+  memoryUpdate,
+  shouldLog,
+  improvement,
+  workOrder,
+  mode,
+  suggestedActions
+}
+```
+
+### ReflectionService
+
+`ReflectionService` creates internal-only reflection entries after conversations.
+
+Reflection entries are not player memory. They can contain:
+
+- conversation summaries
+- recurring player patterns
+- possible memory update suggestions
+- improvement ideas noticed during conversation
+- Burmese misunderstanding candidates for future review
+
+Reflection storage is separate from `MemoryService`.
+
+### Storage Boundaries
+
+Storage should be accessed through service boundaries:
+
+- `MemoryService` owns player memory storage.
+- `ImprovementService` owns improvement inbox storage.
+- `ReflectionService` owns internal reflection storage.
+- `WorkOrderService` owns local work order file creation.
+- `LocalAppStorage` wraps frontend `localStorage` for prototype app state.
+
+Future database work should replace service adapters, not scatter new storage calls through UI or provider code.
 
 Provider:
 
-- Google AI Studio / Gemini through `GEMINI_API_KEY`.
-- Default model: `gemini-2.5-flash`.
-- The UI never calls Gemini directly.
-- The UI calls the local/Vercel Grimm endpoint, which calls `GrimmService`.
-- Future AI providers should plug into `GrimmService`, not into the UI.
+- Local Ollama uses `AI_PROVIDER=ollama`, `OLLAMA_BASE_URL`, and `OLLAMA_MODEL`.
+- Gemini remains available through `AI_PROVIDER=gemini` and `GEMINI_API_KEY`.
+- The UI never calls model providers directly.
+- The UI calls the local/Vercel Grimm endpoint, which calls `GrimmRuntime`.
+- Future AI providers should plug into `ProviderService`, not into the UI.
 
 Memory:
 
 - `MemoryService` wraps local player memory.
 - Supabase is not implemented yet.
-- Grimm loads `grimm/constitution.md` before every AI request.
+- `PromptService` loads `grimm/constitution.md` before every AI request.
 
 Input contract:
 
@@ -186,6 +312,9 @@ Output contract:
   reply,
   memoryUpdate,
   coinsDelta,
+  shouldLog,
+  improvement,
+  workOrder,
   suggestedActions
 }
 ```
@@ -224,3 +353,4 @@ Recommended order:
 5. Improve pond visuals and fish behavior.
 6. Add future app pages inside pageLayer.
 7. Expand Grimm memory, feedback, notebook, and workshop systems.
+8. Add local AI by implementing a new ProviderService adapter, not by changing UI or GrimmRuntime.

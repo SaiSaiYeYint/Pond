@@ -118,8 +118,31 @@ const FOOD_TTL = 6500;
 const FOOD_FADE = 1400;
 const KOI_FRAME = 256;
 const KOI_SWIM_FRAMES = [0, 1, 2, 3, 4, 3, 2, 1];
+const CONVERSATION_REFLECT_MS = 90000;
+const INACTIVE_REFLECT_MS = 10 * 60 * 1000;
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 const coarsePointer = matchMedia("(pointer: coarse)").matches;
+let conversationReflectTimer = null;
+let inactiveReflectTimer = null;
+let lastReflectionChatSize = 0;
+
+class LocalAppStorage {
+  constructor(key, oldKey) {
+    this.key = key;
+    this.oldKey = oldKey;
+  }
+
+  load() {
+    const raw = localStorage.getItem(this.key) || localStorage.getItem(this.oldKey);
+    return raw ? JSON.parse(raw) : null;
+  }
+
+  save(value) {
+    localStorage.setItem(this.key, JSON.stringify(value));
+  }
+}
+
+const appStorage = new LocalAppStorage(KEY, OLD_KEY);
 
 function spriteForKind(kind) {
   if (kind === "gold" && goldKoiSpriteReady) return goldKoiSprite;
@@ -129,7 +152,7 @@ function spriteForKind(kind) {
 
 function load() {
   try {
-    const saved = JSON.parse(localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY));
+    const saved = appStorage.load();
     const hasGoalTrophyRules = saved?.trophyVersion === 2;
     const loaded = saved ? merge(structuredClone(base), saved) : structuredClone(base);
     if (!hasGoalTrophyRules) {
@@ -153,7 +176,7 @@ function merge(a, b) {
 }
 
 function save() {
-  localStorage.setItem(KEY, JSON.stringify(state));
+  appStorage.save(state);
 }
 
 function ensureAiDefaults() {
@@ -161,6 +184,11 @@ function ensureAiDefaults() {
   state.ai.endpoint = location.protocol === "file:" ? "http://127.0.0.1:8787/grimm" : "/api/grimm";
   state.ai.model = "gemini";
   state.ai.mode = "grimm-service";
+}
+
+function grimmHealthEndpoint() {
+  if (state.ai.endpoint.endsWith("/grimm")) return state.ai.endpoint.replace(/\/grimm$/, "/health");
+  return state.ai.endpoint;
 }
 
 function resize() {
@@ -812,11 +840,10 @@ function latestGrimm() {
 }
 
 function say(text, renderNow = true) {
-  const parts = grimmSegments(text);
-  const messages = parts.map(part => ({ role: "g", text: part, at: new Date().toISOString() + "-" + Math.random().toString(36).slice(2, 6) }));
-  state.chat.push(...messages);
+  const message = { role: "g", text: String(text || "").trim(), at: new Date().toISOString() + "-" + Math.random().toString(36).slice(2, 6) };
+  state.chat.push(message);
   if (state.pendingDecision?.attachToNextReply) {
-    state.pendingDecision.messageAt = messages[messages.length - 1]?.at;
+    state.pendingDecision.messageAt = message.at;
     delete state.pendingDecision.attachToNextReply;
   }
   speech.textContent = text;
@@ -843,52 +870,31 @@ function say(text, renderNow = true) {
 }
 
 async function saySequential(text, renderNow = true) {
-  const parts = grimmSegments(text);
-  if (!parts.length) return;
+  const reply = String(text || "").trim();
+  if (!reply) return;
   const quickUser = pendingQuickUser;
   pendingQuickUser = "";
-  const delivered = [];
-
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i];
-    const message = { role: "g", text: part, at: new Date().toISOString() + "-" + Math.random().toString(36).slice(2, 6) };
-    state.chat.push(message);
-    delivered.push(part);
-    if (i === parts.length - 1 && state.pendingDecision?.attachToNextReply) {
-      state.pendingDecision.messageAt = message.at;
-      delete state.pendingDecision.attachToNextReply;
-    }
-    speech.textContent = part;
-    showQuickThread({ userText: quickUser, grimmText: delivered.join("\n"), hold: 30000 });
-    orb.classList.add("talk");
-    clearTimeout(say.timer);
-    clearTimeout(say.hideTimer);
-    say.timer = setTimeout(() => orb.classList.remove("talk"), 700);
-    if (!chat.classList.contains("open")) {
-      state.unread = true;
-      speech.classList.add("hidden");
-      updateBadge();
-    } else {
-      state.unread = false;
-      updateBadge();
-      renderChat();
-      scheduleChatScroll();
-    }
-    if (i < parts.length - 1) {
-      await wait(Math.min(900, 420 + part.length * 10));
-      grimmTypingInChat = true;
-      showQuickThread({ userText: quickUser, grimmText: delivered.join("\n"), typing: true, hold: 30000 });
-      if (chat.classList.contains("open")) {
-        renderChat();
-        scheduleChatScroll();
-      }
-      await wait(620 + Math.min(700, parts[i + 1].length * 12));
-      grimmTypingInChat = false;
-      if (chat.classList.contains("open")) {
-        renderChat();
-        scheduleChatScroll();
-      }
-    }
+  const message = { role: "g", text: reply, at: new Date().toISOString() + "-" + Math.random().toString(36).slice(2, 6) };
+  state.chat.push(message);
+  if (state.pendingDecision?.attachToNextReply) {
+    state.pendingDecision.messageAt = message.at;
+    delete state.pendingDecision.attachToNextReply;
+  }
+  speech.textContent = reply;
+  showQuickThread({ userText: quickUser, grimmText: reply, hold: 30000 });
+  orb.classList.add("talk");
+  clearTimeout(say.timer);
+  clearTimeout(say.hideTimer);
+  say.timer = setTimeout(() => orb.classList.remove("talk"), 700);
+  if (!chat.classList.contains("open")) {
+    state.unread = true;
+    speech.classList.add("hidden");
+    updateBadge();
+  } else {
+    state.unread = false;
+    updateBadge();
+    renderChat();
+    scheduleChatScroll();
   }
 
   say.hideTimer = setTimeout(() => {
@@ -922,11 +928,14 @@ async function answerWithGrimm(text, replyFactory) {
   const remaining = minDelay - (performance.now() - started);
   if (remaining > 0) await wait(remaining);
   await saySequential(reply, false);
+  scheduleConversationReflection();
+  scheduleInactiveReflection();
 }
 
 function user(text) {
   state.chat.push({ role: "u", text, at: new Date().toISOString() });
   scheduleChatScroll();
+  markPlayerActivity();
 }
 
 function buildCaseStudy() {
@@ -1091,6 +1100,76 @@ async function callGrimmService(message, mode = "normal", decision = null) {
   } catch (error) {
     console.warn("GrimmService request failed", error);
     return null;
+  }
+}
+
+function reflectionPayload() {
+  return {
+    message: "simon says reflect",
+    mode: state.workTime ? "workshop" : "normal",
+    playerMemory: buildCaseStudy(),
+    recentMessages: state.chat.slice(-12).map(m => ({ role: m.role === "g" ? "grimm" : "player", text: m.text }))
+  };
+}
+
+function shouldReflectNow() {
+  return state.chat.length > lastReflectionChatSize;
+}
+
+async function runReflection(reason = "quiet") {
+  if (!shouldReflectNow()) return;
+  lastReflectionChatSize = state.chat.length;
+  try {
+    await fetch(state.ai.endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...reflectionPayload(), reason })
+    });
+  } catch (error) {
+    console.warn("Reflection failed", error);
+  }
+}
+
+function sendReflectionOnClose() {
+  if (!shouldReflectNow()) return;
+  lastReflectionChatSize = state.chat.length;
+  const body = JSON.stringify({ ...reflectionPayload(), reason: "pagehide" });
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(state.ai.endpoint, new Blob([body], { type: "application/json" }));
+    return;
+  }
+  fetch(state.ai.endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+    keepalive: true
+  }).catch(() => {});
+}
+
+function scheduleConversationReflection() {
+  clearTimeout(conversationReflectTimer);
+  conversationReflectTimer = setTimeout(() => runReflection("conversation-ended"), CONVERSATION_REFLECT_MS);
+}
+
+function scheduleInactiveReflection() {
+  clearTimeout(inactiveReflectTimer);
+  inactiveReflectTimer = setTimeout(() => runReflection("inactive-10-minutes"), INACTIVE_REFLECT_MS);
+}
+
+function markPlayerActivity() {
+  scheduleInactiveReflection();
+}
+
+async function checkGrimmAwakeOnStart() {
+  try {
+    const response = await fetch(grimmHealthEndpoint(), { method: "GET" });
+    if (!response.ok) return;
+    const health = await response.json();
+    if (health.provider === "ollama" && health.available === false) {
+      say("Grimm is asleep.\nStart Ollama to wake him.");
+    }
+  } catch {
+    // Startup health is best-effort only.
   }
 }
 
@@ -1538,6 +1617,14 @@ doneInput.addEventListener("blur", () => setTimeout(() => {
 document.addEventListener("touchmove", e => {
   if (chatLayer?.state === "keyboard" && !e.target.closest(".log")) e.preventDefault();
 }, { passive: false });
+for (const eventName of ["pointerdown", "keydown", "touchstart"]) {
+  document.addEventListener(eventName, markPlayerActivity, { passive: true });
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") sendReflectionOnClose();
+  else markPlayerActivity();
+});
+window.addEventListener("pagehide", sendReflectionOnClose);
 window.addEventListener("scroll", () => {
   if (chatLayer?.state === "keyboard") pinViewport();
 }, { passive: false });
@@ -1548,6 +1635,8 @@ speech.classList.add("hidden");
 updateBadge();
 render();
 promptForProof();
+markPlayerActivity();
+checkGrimmAwakeOnStart();
 requestAnimationFrame(loop);
 
 

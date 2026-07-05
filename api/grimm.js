@@ -1,46 +1,47 @@
-import { GrimmService } from "../services/GrimmService.js";
+import { GrimmRuntime } from "../services/GrimmRuntime.js";
 import { MemoryService } from "../services/MemoryService.js";
 import { ImprovementService } from "../services/ImprovementService.js";
 import { WorkOrderService } from "../services/WorkOrderService.js";
 
-const grimmService = new GrimmService();
 const memoryService = new MemoryService();
 const improvementService = new ImprovementService();
+const grimmRuntime = new GrimmRuntime({ memoryService, improvementService });
 const workOrderService = new WorkOrderService();
 
 export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method === "GET") {
+    await grimmRuntime.providerService.startupCheck;
     return res.status(200).json({
       ok: true,
       route: "/api/grimm",
       provider: "gemini",
       model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
       hasApiKey: Boolean(process.env.GEMINI_API_KEY),
-      constitutionLoaded: grimmService.hasFile("grimm/constitution.md"),
-      promptFilesLoaded: grimmService.promptFiles("normal").filter(file => grimmService.hasFile(file))
+      ...grimmRuntime.health("normal")
     });
   }
   if (req.method !== "POST") return res.status(405).json({ error: "method_not_allowed" });
 
   try {
     const input = normalize(req.body || {});
+    if (isReflectCommand(input.message)) {
+      return res.status(200).json(grimmRuntime.reflect(input));
+    }
     const workTimeCommand = isWorkTimeCommand(input.message);
     const decisionResult = applyImprovementDecision(input);
     const improvementIdea = improvementService.capture(input.message, input.mode);
     const improvementReview = workTimeCommand ? improvementService.review() : null;
     const improvementDecision = workTimeCommand || decisionResult ? improvementService.nextDecision() : null;
-    const response = await grimmService.respond({
+    const response = await grimmRuntime.respond({
       ...input,
       mode: workTimeCommand ? "workshop" : input.mode,
       improvementIdea,
       improvementReview,
       improvementDecision,
-      lastImprovementDecision: decisionResult,
-      playerMemory: memoryService.forRequest(input.playerMemory)
+      lastImprovementDecision: decisionResult
     });
     if (improvementDecision) response.decision = improvementDecision;
-    memoryService.saveUpdate(response.memoryUpdate, input.message);
     return res.status(200).json(response);
   } catch (error) {
     console.error(error);
@@ -62,6 +63,10 @@ function normalize(body) {
 
 function isWorkTimeCommand(message) {
   return String(message).toLowerCase().trim() === "simon says work time";
+}
+
+function isReflectCommand(message) {
+  return String(message).toLowerCase().trim() === "simon says reflect";
 }
 
 function applyImprovementDecision(input) {

@@ -11,9 +11,12 @@ export class ImprovementService {
   capture(message = "", mode = "normal") {
     if (mode !== "normal" || !this.isImprovement(message)) return null;
     const ideas = this.load();
+    const originalMessage = String(message).trim();
+    const existing = findExisting(ideas, originalMessage, summarize(message), categorize(message));
+    if (existing) return { ...existing, shouldAcknowledge: false };
     const idea = {
       id: cryptoId(),
-      originalMessage: String(message).trim(),
+      originalMessage,
       summary: summarize(message),
       category: categorize(message),
       status: "new",
@@ -22,6 +25,34 @@ export class ImprovementService {
     ideas.push(idea);
     this.save(ideas);
     return { ...idea, shouldAcknowledge: shouldAcknowledge(message, ideas.length) };
+  }
+
+  captureFromReflection(entry = {}) {
+    if (entry.mode !== "normal" || !Array.isArray(entry.improvementIdeas) || !entry.improvementIdeas.length) return [];
+    const ideas = this.load();
+    const saved = [];
+    for (const item of entry.improvementIdeas) {
+      const originalMessage = String(item.originalMessage || item.text || item.summary || "").trim();
+      if (!originalMessage) continue;
+      const summary = String(item.summary || summarize(originalMessage)).trim();
+      const category = String(item.category || categorize(originalMessage));
+      const existing = findExisting(ideas, originalMessage, summary, category);
+      if (existing) continue;
+      const idea = {
+        id: cryptoId(),
+        originalMessage,
+        summary,
+        category,
+        status: "new",
+        source: "reflection",
+        reflectionId: entry.id,
+        createdAt: new Date().toISOString()
+      };
+      ideas.push(idea);
+      saved.push(idea);
+    }
+    if (saved.length) this.save(ideas);
+    return saved;
   }
 
   review() {
@@ -171,6 +202,12 @@ function normalizeIdea(value) {
 
 function ideaKey(idea) {
   return `${idea.category || "feature"}:${normalizeIdea(idea.summary)}`;
+}
+
+function findExisting(ideas, originalMessage, summary, category) {
+  const originalKey = normalizeIdea(originalMessage);
+  const key = `${category || "feature"}:${normalizeIdea(summary)}`;
+  return ideas.find(idea => normalizeIdea(idea.originalMessage) === originalKey || ideaKey(idea) === key) || null;
 }
 
 function cryptoId() {

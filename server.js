@@ -1,16 +1,18 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import { GrimmService } from "./services/GrimmService.js";
+import { GrimmRuntime } from "./services/GrimmRuntime.js";
 import { MemoryService } from "./services/MemoryService.js";
 import { ImprovementService } from "./services/ImprovementService.js";
 import { WorkOrderService } from "./services/WorkOrderService.js";
+import grimmApiHandler from "./api/grimm.js";
+import labHandler from "./api/lab.js";
 
 const app = express();
 const port = Number(process.env.PORT || 8787);
-const grimmService = new GrimmService();
 const memoryService = new MemoryService();
 const improvementService = new ImprovementService();
+const grimmRuntime = new GrimmRuntime({ memoryService, improvementService });
 const workOrderService = new WorkOrderService();
 
 app.use(cors({
@@ -20,15 +22,26 @@ app.use(cors({
   }
 }));
 app.use(express.json({ limit: "1mb" }));
+app.use((req, _res, next) => {
+  if ((req.path === "/api/grimm" || req.path === "/grimm") && req.method === "POST") {
+    console.log(`[Grimm] ${req.path}: ${String(req.body?.message || "").slice(0, 80)}`);
+  }
+  next();
+});
+app.all("/api/grimm", grimmApiHandler);
+app.all("/api/lab", labHandler);
 app.use(express.static(process.cwd()));
 
-app.get("/health", (_req, res) => {
+app.get("/lab", (_req, res) => {
+  res.sendFile("lab.html", { root: process.cwd() });
+});
+
+app.get("/health", async (_req, res) => {
+  await grimmRuntime.providerService.startupCheck;
   res.json({
     ok: true,
-    provider: "gemini",
-    model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
-    hasApiKey: Boolean(process.env.GEMINI_API_KEY),
-    mode: process.env.GEMINI_API_KEY ? "gemini" : "mock"
+    route: "/health",
+    ...grimmRuntime.health("normal")
   });
 });
 
@@ -39,22 +52,23 @@ app.get("/grimm/state", (_req, res) => {
 app.post("/grimm", async (req, res) => {
   try {
     const input = normalize(req.body || {});
+    if (isReflectCommand(input.message)) {
+      return res.json(grimmRuntime.reflect(input));
+    }
     const workTimeCommand = isWorkTimeCommand(input.message);
     const decisionResult = applyImprovementDecision(input);
     const improvementIdea = improvementService.capture(input.message, input.mode);
     const improvementReview = workTimeCommand ? improvementService.review() : null;
     const improvementDecision = workTimeCommand || decisionResult ? improvementService.nextDecision() : null;
-    const response = await grimmService.respond({
+    const response = await grimmRuntime.respond({
       ...input,
       mode: workTimeCommand ? "workshop" : input.mode,
       improvementIdea,
       improvementReview,
       improvementDecision,
-      lastImprovementDecision: decisionResult,
-      playerMemory: memoryService.forRequest(input.playerMemory)
+      lastImprovementDecision: decisionResult
     });
     if (improvementDecision) response.decision = improvementDecision;
-    memoryService.saveUpdate(response.memoryUpdate, input.message);
     res.json(response);
   } catch (error) {
     console.error(error);
@@ -80,6 +94,10 @@ function normalize(body) {
 
 function isWorkTimeCommand(message) {
   return String(message).toLowerCase().trim() === "simon says work time";
+}
+
+function isReflectCommand(message) {
+  return String(message).toLowerCase().trim() === "simon says reflect";
 }
 
 function applyImprovementDecision(input) {

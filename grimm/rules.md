@@ -13,8 +13,11 @@ The response must match this shape:
 ```json
 {
   "reply": "short Grimm reply",
-  "memoryUpdate": {},
   "coinsDelta": 0,
+  "memoryUpdate": {},
+  "shouldLog": false,
+  "improvement": null,
+  "workOrder": null,
   "mode": "normal",
   "suggestedActions": []
 }
@@ -25,6 +28,9 @@ Rules:
 - `reply` must sound like Grimm, not a generic assistant.
 - `coinsDelta` must be an integer from -24 to 44.
 - `memoryUpdate` must be an object.
+- `shouldLog` must be true only when the player clearly describes completed proof worth logging.
+- `improvement` is an object only when Grimm detects a product/design/personality improvement idea.
+- `workOrder` is an object only when Work Time explicitly produces or reviews builder work.
 - `suggestedActions` must be an array of short strings.
 - Normal mode is player conversation.
 - Workshop mode is private owner/development mode.
